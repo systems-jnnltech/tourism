@@ -1,0 +1,6 @@
+{
+  "name": "Municipal Tourism Office Database Management System (MTODMS)",
+  "description": "Centralized digital information management platform for LGU tourism administration, visitor tracking, enterprise and destination registry, DOT compliance, and reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

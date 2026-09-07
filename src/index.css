@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* Leaflet Custom Marker & Popup Enhancements */
+.leaflet-div-icon.custom-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
+/* ==========================================================================
+   OFFICIAL LGU MALUNGON MTODMS PRINT ENGINE SPECIFICATIONS
+   ========================================================================== */
+@media print {
+  /* 1. Page Orientation and Sizing */
+  @page {
+    size: auto;
+    margin: 10mm 12mm 15mm 12mm;
+  }
+
+  /* 2. Global Document Reset */
+  html, body, #root {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 3. Hide Navigation Chrome & App Elements */
+  nav,
+  header,
+  aside,
+  .app-sidebar,
+  .app-navbar,
+  button:not(.force-print),
+  input,
+  select,
+  textarea,
+  .print\:hidden,
+  [data-print-hide="true"],
+  .no-print,
+  .leaflet-control-container,
+  .screen-only-toolbar {
+    display: none !important;
+  }
+
+  /* 4. Reset All Nested Overflow Constraints */
+  main,
+  div,
+  section,
+  article {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    position: static !important;
+  }
+
+  /* 5. Modal Backdrops When Printing */
+  .fixed.inset-0,
+  [role="dialog"] {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* 6. High-Precision Target Printing */
+  /* When a specific element is marked as the active print target, isolate it */
+  body.is-printing-document * {
+    visibility: hidden;
+  }
+
+  body.is-printing-document .printable-active-target,
+  body.is-printing-document .printable-active-target * {
+    visibility: visible !important;
+  }
+
+  body.is-printing-document .printable-active-target {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  /* 7. Document Sheet & Certificate Styling */
+  .printable-document,
+  .printable-sheet,
+  .printable-card {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+  }
+
+  /* 8. Page Break Directives */
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .avoid-page-break,
+  .print-break-avoid,
+  table,
+  tr,
+  img,
+  .signature-block,
+  .certificate-border,
+  .kpi-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 9. High-Contrast Typography & Tables */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 8px !important;
+    font-size: 9pt !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+}
+

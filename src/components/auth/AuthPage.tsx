@@ -122,9 +122,19 @@ export const AuthPage: React.FC = () => {
       });
 
       if (res.success) {
+        const submittedEmail = regEmail;
         setRegSuccessMessage(res.message);
+        // Reset all registration form fields after submission
+        setRegName('');
+        setRegEmail('');
+        setRegDepartment('');
+        setRegRole('Guest/User');
+        setRegPassword('');
+        setRegConfirmPassword('');
+        setShowRegPassword(false);
+
         if (res.requiresApproval) {
-          setLoginIdentifier(regEmail);
+          setLoginIdentifier(submittedEmail);
           setLoginPassword('');
           setIsPendingApproval(true);
         }
@@ -442,6 +452,8 @@ export const AuthPage: React.FC = () => {
                     onClick={() => {
                       setMode('register');
                       setLoginError(null);
+                      setRegError(null);
+                      setRegSuccessMessage(null);
                     }}
                     className="font-semibold text-emerald-700 hover:text-emerald-800 underline underline-offset-2 cursor-pointer"
                   >

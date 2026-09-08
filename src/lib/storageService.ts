@@ -1,4 +1,4 @@
-﻿import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export interface UploadResult {
   url: string;
@@ -84,7 +84,7 @@ export async function compressAndConvertToDataUrl(
  */
 export async function uploadImageFile(
   file: File,
-  folder: 'destinations' | 'msmes' | 'establishments' | 'general' = 'general'
+  folder: 'destinations' | 'msmes' | 'establishments' | 'events' | 'general' = 'general'
 ): Promise<UploadResult> {
   const validation = validateImageFile(file);
   if (!validation.valid) {

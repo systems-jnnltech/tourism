@@ -16,7 +16,7 @@ interface ImageUploaderProps {
   label?: string;
   value: string;
   onChange: (url: string) => void;
-  folder?: 'destinations' | 'msmes' | 'establishments' | 'general';
+  folder?: 'destinations' | 'msmes' | 'establishments' | 'events' | 'general';
   placeholder?: string;
   className?: string;
   helperText?: string;

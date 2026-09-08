@@ -34,6 +34,7 @@ import {
 import { useTourism } from '../../context/TourismContext';
 import { TourismEvent, EventCategory } from '../../types';
 import { EventPermitModal } from '../common/EventPermitModal';
+import { ImageUploader } from '../common/ImageUploader';
 
 export const EventsView: React.FC = () => {
   const { events, addEvent, updateEvent, deleteEvent, isReadOnly } = useTourism();
@@ -1161,6 +1162,18 @@ export const EventsView: React.FC = () => {
                   value={formData.programFlow}
                   onChange={(e) => setFormData({ ...formData, programFlow: e.target.value })}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800"
+                />
+              </div>
+
+              {/* Event Cover Photo / Stage Banner */}
+              <div>
+                <ImageUploader
+                  label="Official Event Banner / Cover Photo"
+                  folder="events"
+                  value={formData.bannerPhoto || ''}
+                  onChange={(url) => setFormData({ ...formData, bannerPhoto: url })}
+                  placeholder="https://images.unsplash.com/... or /events/banner.jpg"
+                  helperText="Upload official festival banner, event promotional poster, or stage backdrop photo to cloud bucket storage."
                 />
               </div>
 

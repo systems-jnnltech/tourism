@@ -14,13 +14,15 @@ import {
   Plus,
   TrendingUp,
   DollarSign,
-  Filter
+  Filter,
+  Trash2,
+  Cloud
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { AddCampaignModal } from '../common/AddCampaignModal';
 
 export const MarketingPromotionView: React.FC = () => {
-  const { campaigns } = useTourism();
+  const { campaigns, deleteCampaign, isSupabaseConnected } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,6 +84,10 @@ export const MarketingPromotionView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg">
+            <Cloud className="w-3.5 h-3.5 text-emerald-600" />
+            <span>{isSupabaseConnected ? 'Cloud Synced (Table #14)' : 'Local Storage Cache'}</span>
+          </span>
           <span className="hidden sm:inline-block px-3 py-1.5 bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold rounded-lg">
             Brand: "Subida Malungon! Heart of Highlands"
           </span>
@@ -179,7 +185,7 @@ export const MarketingPromotionView: React.FC = () => {
                 <div className="text-xs text-slate-500 mt-2">
                   <strong className="text-slate-700">Target:</strong> {camp.targetAudience}
                 </div>
-                <p className="text-xs text-sky-700 mt-2 font-medium">{camp.channels.join(' • ')}</p>
+                <p className="text-xs text-sky-700 mt-2 font-medium">{(camp.channels || []).join(' • ')}</p>
 
                 <div className="grid grid-cols-2 gap-3 mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
                   <div>
@@ -197,17 +203,31 @@ export const MarketingPromotionView: React.FC = () => {
                 <span className="text-slate-500">
                   Lead: <strong className="text-slate-800">{camp.leadPartner}</strong>
                 </span>
-                <span
-                  className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
-                    camp.status === 'Active'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : camp.status === 'In Production'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {camp.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                      camp.status === 'Active'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : camp.status === 'In Production'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {camp.status}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete campaign "${camp.campaignTitle}"?`)) {
+                        deleteCampaign(camp.id);
+                      }
+                    }}
+                    title="Delete Campaign"
+                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

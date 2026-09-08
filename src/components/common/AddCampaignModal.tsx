@@ -56,6 +56,8 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
       viewsOrReach: Number(viewsOrReach) || 0,
     });
 
+    setCampaignTitle('');
+    setError('');
     onClose();
   };
 

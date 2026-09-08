@@ -191,6 +191,8 @@ interface TourismContextType {
   // Marketing & Social
   campaigns: MarketingCampaign[];
   addCampaign: (camp: Omit<MarketingCampaign, 'id'>) => void;
+  updateCampaign: (id: string, updated: Partial<MarketingCampaign>) => void;
+  deleteCampaign: (id: string) => void;
 
   socialMetrics: SocialMediaPlatformStat[];
   scheduledPosts: ScheduledPost[];
@@ -725,6 +727,17 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setUsers(mergedUsers);
       } else if (remoteUsers && remoteUsers.length === 0) {
         await seedTableIfEmpty('user_profiles', INITIAL_USERS);
+      }
+
+      // 14. Marketing Campaigns (PMU)
+      const remoteCampaigns = await fetchTableData<MarketingCampaign>('marketing_campaigns');
+      if (remoteCampaigns && remoteCampaigns.length > 0) {
+        setCampaigns(remoteCampaigns);
+      } else if (remoteCampaigns && remoteCampaigns.length === 0) {
+        const toSeed = campaigns.length > 0 ? campaigns : INITIAL_CAMPAIGNS;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('marketing_campaigns', toSeed);
+        }
       }
     } catch (err) {
       console.warn('[Supabase Sync] Exception during sync cycle:', err);
@@ -1417,6 +1430,34 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newCamp: MarketingCampaign = { id: `mkt-${Date.now()}`, ...campData };
     setCampaigns((prev) => [newCamp, ...prev]);
     addAuditLog('CREATE', 'Promotion & Marketing', `Launched campaign: ${newCamp.campaignTitle}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('marketing_campaigns', newCamp).catch((err) =>
+        console.warn('[Supabase Sync] addCampaign failed:', err)
+      );
+    }
+  };
+
+  const updateCampaign = (id: string, updated: Partial<MarketingCampaign>) => {
+    setCampaigns((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
+    );
+    addAuditLog('UPDATE', 'Promotion & Marketing', `Updated marketing campaign ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('marketing_campaigns', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateCampaign failed:', err)
+      );
+    }
+  };
+
+  const deleteCampaign = (id: string) => {
+    const campToDelete = campaigns.find((c) => c.id === id);
+    setCampaigns((prev) => prev.filter((c) => c.id !== id));
+    addAuditLog('DELETE', 'Promotion & Marketing', `Deleted campaign record ${campToDelete?.campaignTitle || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('marketing_campaigns', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteCampaign failed:', err)
+      );
+    }
   };
 
   const addScheduledPost = (postData: Omit<ScheduledPost, 'id'>) => {
@@ -1654,6 +1695,8 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addProduct,
         campaigns,
         addCampaign,
+        updateCampaign,
+        deleteCampaign,
         socialMetrics,
         scheduledPosts,
         addScheduledPost,

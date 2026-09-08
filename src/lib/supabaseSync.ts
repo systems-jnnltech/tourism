@@ -13,6 +13,7 @@ import {
   EmployeeRecord,
   OfficeInventoryItem,
   UserProfile,
+  MarketingCampaign,
 } from '../types';
 
 // Utility to convert camelCase object keys to snake_case for PostgreSQL

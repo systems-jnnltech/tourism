@@ -293,6 +293,23 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 14. Marketing Campaigns Table (PMU - Promotion & Marketing Unit)
+CREATE TABLE IF NOT EXISTS marketing_campaigns (
+    id TEXT PRIMARY KEY,
+    campaign_title TEXT NOT NULL,
+    type TEXT NOT NULL,
+    target_audience TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    budget NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    channels TEXT[] DEFAULT '{}',
+    lead_partner TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Active',
+    deliverables_summary TEXT,
+    views_or_reach BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
@@ -309,12 +326,14 @@ ALTER TABLE tourist_feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE official_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE marketing_campaigns ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to directories (for visitor portal)
 CREATE POLICY "Public destinations read access" ON tourism_destinations FOR SELECT USING (true);
 CREATE POLICY "Public establishments read access" ON tourism_establishments FOR SELECT USING (true);
 CREATE POLICY "Public events read access" ON tourism_events FOR SELECT USING (true);
 CREATE POLICY "Public msme read access" ON msme_tourism FOR SELECT USING (true);
+CREATE POLICY "Public campaigns read access" ON marketing_campaigns FOR SELECT USING (true);
 
 -- Allow authenticated or anon access with API key for full CRUD
 CREATE POLICY "Full access to tourist_arrivals" ON tourist_arrivals FOR ALL USING (true);
@@ -330,6 +349,7 @@ CREATE POLICY "Full access to tourist_feedback" ON tourist_feedback FOR ALL USIN
 CREATE POLICY "Full access to official_documents" ON official_documents FOR ALL USING (true);
 CREATE POLICY "Full access to audit_logs" ON audit_logs FOR ALL USING (true);
 CREATE POLICY "Full access to user_profiles" ON user_profiles FOR ALL USING (true);
+CREATE POLICY "Full access to marketing_campaigns" ON marketing_campaigns FOR ALL USING (true);
 
 -- ==============================================================================
 -- 12. SUPABASE OBJECT STORAGE (Buckets & Policies for Photos and Media)

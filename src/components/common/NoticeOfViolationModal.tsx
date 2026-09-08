@@ -295,7 +295,7 @@ export const NoticeOfViolationModal: React.FC<NoticeOfViolationModalProps> = ({
               </div>
               <div>
                 <p className="font-bold text-slate-700">REGULATORY DOCKET AUTH</p>
-                <p className="text-rose-700 font-bold">{notice?.caseNumber || 'MTODMS-NOV-AUTH-2026-SAR'}</p>
+                <p className="text-rose-700 font-bold">{notice?.docketNumber || 'MTODMS-NOV-AUTH-2026-SAR'}</p>
                 <p className="text-slate-400">Official Municipal Tourism Regulatory Enforcement</p>
               </div>
             </div>

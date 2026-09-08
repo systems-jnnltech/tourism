@@ -259,7 +259,7 @@ export interface FinancialMonitoringRecord {
   purchaseOrdersCount: number;
   cashAdvancesTotal: number;
   liquidationRate: number; // %
-  annualProcurementPlanStatus: 'Approved by BAC' | 'Under Review' | 'Submitted to GPPB';
+  annualProcurementPlanStatus: 'Approved by BAC' | 'Under Review' | 'Submitted to GPPB' | 'In Preparation';
   recentTransactions: {
     id: string;
     date: string;
@@ -407,8 +407,8 @@ export interface SocialMediaPlatformStat {
   monthlyEngagement: number;
   shares: number;
   reactions: number;
-  topPostTitle: string;
-  topPostEngagement: string;
+  topPostTitle?: string;
+  topPostEngagement?: string;
 }
 
 export interface ScheduledPost {
@@ -464,7 +464,7 @@ export interface AuditLogEntry {
   timestamp: string;
   userName: string;
   userRole: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'EXPORT' | 'INSPECT' | 'RESOLVE' | 'LOGIN';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'EXPORT' | 'INSPECT' | 'RESOLVE' | 'LOGIN' | 'LOGOUT';
   module: string;
   details: string;
 }

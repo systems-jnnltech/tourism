@@ -240,7 +240,7 @@ export const GrievanceResolutionModal: React.FC<GrievanceResolutionModalProps> =
               </div>
               <div>
                 <p className="font-mono font-bold text-slate-800">DOCKET AUTH: {certNumber}</p>
-                <p className="text-emerald-700 font-medium">Tracking ID: {complaint.trackingId}</p>
+                <p className="text-emerald-700 font-medium">Tracking ID: {complaint.trackingNumber || complaint.id}</p>
                 <p className="text-slate-400">Official Municipal ARTA 72-hour Resolution Registry Record</p>
               </div>
             </div>

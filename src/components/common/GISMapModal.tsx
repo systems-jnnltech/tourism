@@ -75,7 +75,7 @@ export const GISMapModal: React.FC<GISMapModalProps> = ({ isOpen, onClose, selec
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const markersLayerRef = useRef<L.FeatureGroup | null>(null);
   const bufferLayerRef = useRef<L.LayerGroup | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
 
@@ -132,7 +132,7 @@ export const GISMapModal: React.FC<GISMapModalProps> = ({ isOpen, onClose, selec
     // Create Layer Groups
     const bufferGroup = L.layerGroup().addTo(map);
     const routeGroup = L.layerGroup().addTo(map);
-    const markersGroup = L.layerGroup().addTo(map);
+    const markersGroup = L.featureGroup().addTo(map);
 
     bufferLayerRef.current = bufferGroup;
     routeLayerRef.current = routeGroup;

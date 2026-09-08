@@ -81,31 +81,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
   const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
   const [briefModalOpen, setBriefModalOpen] = useState(false);
 
-  // Calculate live dynamic metrics based on timeframe
-  const timeframeMultiplier = useMemo(() => {
-    switch (timeframe) {
-      case 'FY2026': return 3.4;
-      case 'Q1': return 0.85;
-      case 'Q2': return 1.45;
-      case 'Q3': return 1.0;
-      case 'MONTH': return 0.35;
-      default: return 1.0;
-    }
-  }, [timeframe]);
+  // Filter tourists based on selected timeframe
+  const filteredTourists = useMemo(() => {
+    if (!tourists.length) return [];
+    const currentYear = new Date().getFullYear();
 
-  // Tourist calculations
-  const totalTouristsCount = Math.round(tourists.length * timeframeMultiplier);
-  const foreignTouristsCount = Math.round(tourists.filter((t) => t.isForeign).length * timeframeMultiplier);
+    return tourists.filter((t) => {
+      if (!t.dateOfVisit) return true;
+      const visitDate = new Date(t.dateOfVisit);
+      const visitYear = visitDate.getFullYear();
+      const visitMonth = visitDate.getMonth(); // 0-11
+
+      switch (timeframe) {
+        case 'FY2026':
+          return isNaN(visitYear) || visitYear === 2026 || visitYear === currentYear;
+        case 'Q1':
+          return visitMonth >= 0 && visitMonth <= 2; // Jan - Mar
+        case 'Q2':
+          return visitMonth >= 3 && visitMonth <= 5; // Apr - Jun
+        case 'Q3':
+          return visitMonth >= 6 && visitMonth <= 8; // Jul - Sep
+        case 'MONTH':
+          return visitMonth === new Date().getMonth();
+        default:
+          return true;
+      }
+    });
+  }, [tourists, timeframe]);
+
+  // Tourist calculations computed from live records
+  const totalTouristsCount = filteredTourists.reduce((sum, t) => sum + 1 + (t.companionsCount || 0), 0);
+  const foreignTouristsCount = filteredTourists
+    .filter((t) => t.isForeign)
+    .reduce((sum, t) => sum + 1 + (t.companionsCount || 0), 0);
   const domesticTouristsCount = totalTouristsCount - foreignTouristsCount;
   const foreignRatio = totalTouristsCount > 0 ? Math.round((foreignTouristsCount / totalTouristsCount) * 100) : 0;
-  const domesticRatio = 100 - foreignRatio;
+  const domesticRatio = totalTouristsCount > 0 ? 100 - foreignRatio : 0;
 
   // Revenue calculations
-  const baseSpending = tourists.reduce((sum, t) => sum + (t.touristSpending || 0), 0);
-  const totalDirectReceipts = Math.round(baseSpending * timeframeMultiplier);
+  const totalDirectReceipts = filteredTourists.reduce((sum, t) => sum + (t.touristSpending || 0), 0);
   const tourismMultiplier = 1.84; // Official DOT economic multiplier for secondary/tertiary impact
   const totalEconomicFootprint = Math.round(totalDirectReceipts * tourismMultiplier);
-  const averageVisitorSpend = totalTouristsCount > 0 ? Math.round(totalDirectReceipts / totalTouristsCount) : 1420;
+  const averageVisitorSpend = totalTouristsCount > 0 ? Math.round(totalDirectReceipts / totalTouristsCount) : 0;
 
   // Establishments calculations
   const totalEnterprises = establishments.length;
@@ -132,40 +149,165 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
   const pendingNoticesCount = notices.filter((n) => n.status === 'Pending Corrective Action').length;
   const activeComplaintsCount = complaints.filter((c) => c.status !== 'Resolved / Closed').length;
   const regulatoryMattersTotal = pendingNoticesCount + activeComplaintsCount;
+  const totalRegulatory = notices.length + complaints.length;
+  const resolvedRegulatory =
+    notices.filter((n) => n.status.toLowerCase().includes('resolved') || n.status.toLowerCase().includes('compliant')).length +
+    complaints.filter((c) => c.status.toLowerCase().includes('resolved') || c.status.toLowerCase().includes('closed')).length;
+  const resolutionRate = totalRegulatory > 0 ? Math.round((resolvedRegulatory / totalRegulatory) * 100) : 100;
 
-  // Chart dataset: Monthly inbound volume and revenue
-  const monthlyAnalyticsData = useMemo(() => [
-    { month: 'Jan', domestic: 1240, foreign: 85, total: 1325, revenue: 1.88 },
-    { month: 'Feb', domestic: 1480, foreign: 110, total: 1590, revenue: 2.25 },
-    { month: 'Mar', domestic: 2100, foreign: 195, total: 2295, revenue: 3.26 },
-    { month: 'Apr (Semana Santa)', domestic: 4850, foreign: 340, total: 5190, revenue: 7.37 },
-    { month: 'May (Summer Peaks)', domestic: 5200, foreign: 410, total: 5610, revenue: 7.96 },
-    { month: 'Jun (Harvest)', domestic: 2800, foreign: 180, total: 2980, revenue: 4.23 },
-    { month: 'Jul', domestic: 1950, foreign: 140, total: 2090, revenue: 2.97 },
-    { month: 'Aug', domestic: 2300, foreign: 175, total: 2475, revenue: 3.51 },
-    { month: 'Sep (Current)', domestic: 2600, foreign: 210, total: 2810, revenue: 3.99 },
-    { month: 'Oct (Projected)', domestic: 2750, foreign: 220, total: 2970, revenue: 4.21 },
-    { month: 'Nov (Slang Fest)', domestic: 4900, foreign: 390, total: 5290, revenue: 7.51 },
-    { month: 'Dec (Holidays)', domestic: 5400, foreign: 430, total: 5830, revenue: 8.28 },
-  ], []);
+  // Real Dynamic Chart Dataset: Monthly Inbound Volume & Economic Revenue Trajectory
+  const monthlyAnalyticsData = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const data = monthNames.map((month) => ({
+      month,
+      domestic: 0,
+      foreign: 0,
+      total: 0,
+      revenue: 0,
+    }));
 
-  // Pie chart dataset: Purpose of visit distribution
-  const purposeDistribution = useMemo(() => [
-    { name: 'Eco-Adventure & Trekking', value: 38, color: '#059669' },
-    { name: 'Cultural & Blaan Heritage', value: 26, color: '#4f46e5' },
-    { name: 'Agri-Tourism & Farms', value: 16, color: '#16a34a' },
-    { name: 'Leisure & Cold Springs', value: 12, color: '#0284c7' },
-    { name: 'MICE & LGU Seminars', value: 8, color: '#d97706' },
-  ], []);
+    tourists.forEach((t) => {
+      if (!t.dateOfVisit) return;
+      const d = new Date(t.dateOfVisit);
+      const mIdx = d.getMonth();
+      if (mIdx >= 0 && mIdx < 12) {
+        const headcount = 1 + (t.companionsCount || 0);
+        if (t.isForeign) {
+          data[mIdx].foreign += headcount;
+        } else {
+          data[mIdx].domestic += headcount;
+        }
+        data[mIdx].total += headcount;
+        data[mIdx].revenue += (t.touristSpending || 0) / 1000000;
+      }
+    });
 
-  // Feeder origins breakdown
-  const feederDemographics = [
-    { origin: 'Region XII (SOCCSKSARGEN)', share: 48, visitors: '14,800+', hub: 'Gen. Santos City, Koronadal' },
-    { origin: 'Region XI (Davao Region)', share: 32, visitors: '9,800+', hub: 'Davao City, Digos City' },
-    { origin: 'National Capital Region & Luzon', share: 12, visitors: '3,700+', hub: 'Metro Manila, Laguna' },
-    { origin: 'Visayas (Cebu, Iloilo)', share: 5, visitors: '1,500+', hub: 'Cebu City, Bacolod' },
-    { origin: 'International / Balikbayan', share: 3, visitors: '900+', hub: 'USA, Japan, Australia' },
-  ];
+    return data.map((item) => ({
+      ...item,
+      revenue: Math.round(item.revenue * 100) / 100,
+    }));
+  }, [tourists]);
+
+  // Real Dynamic Pie Chart: Purpose of visit distribution
+  const purposeDistribution = useMemo(() => {
+    if (!tourists.length) {
+      return [{ name: 'No Survey Records Yet', value: 100, color: '#94a3b8' }];
+    }
+
+    const palette = ['#059669', '#4f46e5', '#16a34a', '#0284c7', '#d97706', '#8b5cf6', '#ec4899', '#f97316'];
+    const counts: Record<string, number> = {};
+
+    tourists.forEach((t) => {
+      const purpose = t.purposeOfVisit || 'General Leisure';
+      counts[purpose] = (counts[purpose] || 0) + 1 + (t.companionsCount || 0);
+    });
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    return sorted.map(([name, count], idx) => ({
+      name,
+      value: total > 0 ? Math.round((count / total) * 100) : 0,
+      color: palette[idx % palette.length],
+    }));
+  }, [tourists]);
+
+  // Real Dynamic Geographic Feeder Origins Breakdown
+  const feederDemographics = useMemo(() => {
+    if (!tourists.length) {
+      return [
+        { origin: 'Region XII (SOCCSKSARGEN)', share: 0, visitors: '0', hub: 'Local / Regional' },
+        { origin: 'Region XI (Davao Region)', share: 0, visitors: '0', hub: 'Davao Hub' },
+        { origin: 'NCR & Luzon', share: 0, visitors: '0', hub: 'Metro Manila' },
+        { origin: 'Visayas', share: 0, visitors: '0', hub: 'Central Visayas' },
+        { origin: 'International / Foreign', share: 0, visitors: '0', hub: 'Global' },
+      ];
+    }
+
+    const categories = {
+      soccsksargen: { origin: 'Region XII (SOCCSKSARGEN)', count: 0, hub: 'Gen. Santos City, Sarangani' },
+      davao: { origin: 'Region XI (Davao Region)', count: 0, hub: 'Davao City, Digos' },
+      luzon: { origin: 'NCR & Luzon', count: 0, hub: 'Metro Manila & Provinces' },
+      visayas: { origin: 'Visayas', count: 0, hub: 'Cebu, Iloilo, Bacolod' },
+      foreign: { origin: 'International / Foreign', count: 0, hub: 'Global Inbound' },
+    };
+
+    tourists.forEach((t) => {
+      const headcount = 1 + (t.companionsCount || 0);
+      const addr = (t.address || '').toLowerCase();
+      const nat = (t.nationality || '').toLowerCase();
+
+      if (t.isForeign || (nat && nat !== 'filipino' && nat !== 'philippines')) {
+        categories.foreign.count += headcount;
+      } else if (
+        addr.includes('gensan') ||
+        addr.includes('general santos') ||
+        addr.includes('sarangani') ||
+        addr.includes('malungon') ||
+        addr.includes('koronadal') ||
+        addr.includes('south cotabato') ||
+        addr.includes('cotabato') ||
+        addr.includes('sultan kudarat') ||
+        addr.includes('region 12') ||
+        addr.includes('region xii')
+      ) {
+        categories.soccsksargen.count += headcount;
+      } else if (
+        addr.includes('davao') ||
+        addr.includes('digos') ||
+        addr.includes('tagum') ||
+        addr.includes('mati') ||
+        addr.includes('panabo') ||
+        addr.includes('region 11') ||
+        addr.includes('region xi')
+      ) {
+        categories.davao.count += headcount;
+      } else if (
+        addr.includes('manila') ||
+        addr.includes('quezon') ||
+        addr.includes('makati') ||
+        addr.includes('laguna') ||
+        addr.includes('cavite') ||
+        addr.includes('batangas') ||
+        addr.includes('bulacan') ||
+        addr.includes('pampanga') ||
+        addr.includes('baguio') ||
+        addr.includes('luzon')
+      ) {
+        categories.luzon.count += headcount;
+      } else if (
+        addr.includes('cebu') ||
+        addr.includes('bohol') ||
+        addr.includes('iloilo') ||
+        addr.includes('bacolod') ||
+        addr.includes('leyte') ||
+        addr.includes('visayas')
+      ) {
+        categories.visayas.count += headcount;
+      } else {
+        categories.soccsksargen.count += headcount;
+      }
+    });
+
+    const totalHeadcount = Object.values(categories).reduce((sum, c) => sum + c.count, 0) || 1;
+
+    return Object.values(categories)
+      .map((c) => ({
+        origin: c.origin,
+        share: Math.round((c.count / totalHeadcount) * 100),
+        visitors: c.count.toLocaleString(),
+        hub: c.hub,
+      }))
+      .sort((a, b) => b.share - a.share);
+  }, [tourists]);
+
+  // Next upcoming event calculation
+  const nextEvent = events.find((e) => new Date(e.date) >= new Date()) || events[0];
+  const daysUntilNextEvent = nextEvent
+    ? Math.max(0, Math.ceil((new Date(nextEvent.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   // Refresh handler
   const handleRefreshData = async () => {
@@ -455,7 +597,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
               ></div>
             </div>
             <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-              <span className="text-teal-700 font-medium">5 Active Eco-Sites</span>
+              <span className="text-teal-700 font-medium">{destinations.length} Active Eco-Sites</span>
               <span>{Math.max(0, totalDailyCapacity - currentTotalVisitorsToday)} slots left</span>
             </div>
           </div>
@@ -484,7 +626,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
             </div>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
-            <span className="font-semibold text-emerald-600">88.5% Resolution</span>
+            <span className="font-semibold text-emerald-600">{resolutionRate}% Resolution</span>
             <span className="text-slate-400">Ord. 2024-08</span>
           </div>
         </div>
@@ -565,10 +707,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
           <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
             <div className="flex items-center space-x-4">
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-xs bg-indigo-600"></span> Domestic Travelers (89.2%)
+                <span className="w-3 h-3 rounded-xs bg-indigo-600"></span> Domestic Travelers ({domesticRatio}%)
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-xs bg-sky-600"></span> Inbound International (10.8%)
+                <span className="w-3 h-3 rounded-xs bg-sky-600"></span> Inbound International ({foreignRatio}%)
               </span>
             </div>
             <button
@@ -629,7 +771,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-400 text-[11px]">Key Segment: Eco-Adventure</span>
+            <span className="text-slate-400 text-[11px]">Key Segment: {purposeDistribution[0]?.name || 'Eco-Adventure'}</span>
             <button
               onClick={() => setActiveModule('research_planning')}
               className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
@@ -863,7 +1005,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-400 text-[11px]">Primary feeder: GenSan & Davao</span>
+            <span className="text-slate-400 text-[11px]">
+              Primary feeder: {feederDemographics[0]?.origin.replace(/\s*\(.*?\)/, '') || 'SOCCSKSARGEN & Davao'}
+            </span>
             <button
               onClick={() => setActiveModule('tourists')}
               className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
@@ -901,8 +1045,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                 >
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-800 font-bold text-center flex flex-col items-center justify-center shrink-0 border border-indigo-200">
-                      <span className="text-[10px] uppercase leading-none">{ev.date.substring(5, 7) === '11' ? 'NOV' : 'SEP'}</span>
-                      <span className="text-sm font-black leading-tight">{ev.date.substring(8, 10)}</span>
+                      <span className="text-[10px] uppercase leading-none">
+                        {new Date(ev.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                      </span>
+                      <span className="text-sm font-black leading-tight">
+                        {new Date(ev.date).getDate() || ev.date.substring(8, 10)}
+                      </span>
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs sm:text-sm">{ev.eventName}</h4>
@@ -938,7 +1086,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span className="text-slate-500 text-[11px]">Slang Festival 2026 flagship event is 68 days away</span>
+            <span className="text-slate-500 text-[11px]">
+              {nextEvent
+                ? `${nextEvent.eventName} flagship event is ${daysUntilNextEvent === 0 ? 'today!' : `${daysUntilNextEvent} days away`}`
+                : 'No scheduled upcoming events'}
+            </span>
             <button
               onClick={() => setActiveModule('events')}
               className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-md border border-indigo-200 transition-colors"
@@ -981,7 +1133,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
                   <div className="font-bold text-emerald-900">Tourism Enterprise Accreditation Inventory</div>
-                  <div className="text-emerald-700 text-[11px]">Status: 83% Current • Ready for Certified Export</div>
+                  <div className="text-emerald-700 text-[11px]">Status: {accreditationRate}% Current • Ready for Certified Export</div>
                 </div>
               </div>
             </div>
@@ -1154,9 +1306,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                   III. Environmental Carrying Capacity & Ordinance Enforcement
                 </h4>
                 <p className="text-slate-600 leading-relaxed text-xs">
-                  All 5 municipal ecotourism reserves remain active under Municipal Tourism Code (Ordinance 2024-08).
+                  All {destinations.length} municipal ecotourism reserves remain active under Municipal Tourism Code (Ordinance 2024-08).
                   Peak carrying capacity alerts are strictly monitored via ranger checkpoints and digital GIS spatial monitoring.
-                  Accreditation enforcement has attained an 83% compliance rating among registered hospitality enterprises.
+                  Accreditation enforcement has attained a {accreditationRate}% compliance rating among registered hospitality enterprises.
                 </p>
               </div>
 

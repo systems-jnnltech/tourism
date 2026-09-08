@@ -60,6 +60,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     complaints,
     feedbacks,
     tiacLogs,
+    isSupabaseConnected,
+    isSyncing,
   } = useTourism();
 
   const pendingNoticesCount = notices.filter((n) => n.status === 'Pending Corrective Action').length;
@@ -304,8 +306,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Footer Info */}
         <div className="p-3 border-t border-slate-800 bg-slate-950/60 text-[11px] text-slate-400 shrink-0">
           <div className="flex items-center justify-between font-mono text-[10px]">
-            <span>Database: Online</span>
-            <span className="text-emerald-400 font-semibold">100% Synced</span>
+            <div className="flex items-center space-x-1.5 min-w-0">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  isSupabaseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                }`}
+              />
+              <span className="text-slate-300 truncate">
+                {isSupabaseConnected ? 'Supabase: Online' : 'Storage: Local Cache'}
+              </span>
+            </div>
+            <span className={`shrink-0 ml-1 font-semibold ${isSupabaseConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {isSyncing ? 'Syncing...' : isSupabaseConnected ? 'Cloud Active' : 'Offline'}
+            </span>
           </div>
           <div className="text-[10px] text-slate-500 mt-1 truncate">
             LGU Malungon Tourism Portal © 2026

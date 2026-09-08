@@ -51,6 +51,15 @@ import {
   INITIAL_DOCUMENTS,
   INITIAL_AUDIT_LOGS,
 } from '../data/seedData';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import {
+  fetchTableData,
+  insertTableRow,
+  updateTableRow,
+  deleteTableRow,
+  seedTableIfEmpty,
+  checkSupabaseHealth,
+} from '../lib/supabaseSync';
 
 interface SystemNotification {
   id: string;
@@ -63,6 +72,11 @@ interface SystemNotification {
 }
 
 interface TourismContextType {
+  // Cloud Sync (Supabase)
+  isSupabaseConnected: boolean;
+  isSyncing: boolean;
+  syncWithSupabase: () => Promise<void>;
+
   // Current user & role
   currentUser: UserProfile;
   setCurrentUser: (user: UserProfile) => void;
@@ -407,6 +421,134 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem(`${STORAGE_KEY}_audit`, JSON.stringify(auditLogs));
   }, [auditLogs]);
 
+  // Cloud Sync (Supabase) State & Synchronization
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(isSupabaseConfigured);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  const syncWithSupabase = async () => {
+    if (!isSupabaseConfigured) {
+      setIsSupabaseConnected(false);
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const isHealthy = await checkSupabaseHealth();
+      setIsSupabaseConnected(isHealthy);
+
+      if (!isHealthy) {
+        console.warn('[Supabase Sync] Could not reach Supabase endpoint, continuing with local cache.');
+        return;
+      }
+
+      // 1. Tourists
+      const remoteTourists = await fetchTableData<TouristArrival>('tourist_arrivals');
+      if (remoteTourists && remoteTourists.length > 0) {
+        setTourists(remoteTourists);
+      } else if (remoteTourists && remoteTourists.length === 0) {
+        await seedTableIfEmpty('tourist_arrivals', INITIAL_TOURISTS);
+      }
+
+      // 2. Establishments
+      const remoteEst = await fetchTableData<TourismEstablishment>('tourism_establishments');
+      if (remoteEst && remoteEst.length > 0) {
+        setEstablishments(remoteEst);
+      } else if (remoteEst && remoteEst.length === 0) {
+        await seedTableIfEmpty('tourism_establishments', INITIAL_ESTABLISHMENTS);
+      }
+
+      // 3. MSMEs
+      const remoteMsme = await fetchTableData<MSMETourism>('msme_tourism');
+      if (remoteMsme && remoteMsme.length > 0) {
+        setMsmes(remoteMsme);
+      } else if (remoteMsme && remoteMsme.length === 0) {
+        await seedTableIfEmpty('msme_tourism', INITIAL_MSMES);
+      }
+
+      // 4. Destinations
+      const remoteDest = await fetchTableData<TourismDestination>('tourism_destinations');
+      if (remoteDest && remoteDest.length > 0) {
+        setDestinations(remoteDest);
+      } else if (remoteDest && remoteDest.length === 0) {
+        await seedTableIfEmpty('tourism_destinations', INITIAL_DESTINATIONS);
+      }
+
+      // 5. Events
+      const remoteEvents = await fetchTableData<TourismEvent>('tourism_events');
+      if (remoteEvents && remoteEvents.length > 0) {
+        setEvents(remoteEvents);
+      } else if (remoteEvents && remoteEvents.length === 0) {
+        await seedTableIfEmpty('tourism_events', INITIAL_EVENTS);
+      }
+
+      // 6. Employees
+      const remoteEmp = await fetchTableData<EmployeeRecord>('employees');
+      if (remoteEmp && remoteEmp.length > 0) {
+        setEmployees(remoteEmp);
+      } else if (remoteEmp && remoteEmp.length === 0) {
+        await seedTableIfEmpty('employees', INITIAL_EMPLOYEES);
+      }
+
+      // 7. Inventory
+      const remoteInv = await fetchTableData<OfficeInventoryItem>('office_inventory');
+      if (remoteInv && remoteInv.length > 0) {
+        setInventory(remoteInv);
+      } else if (remoteInv && remoteInv.length === 0) {
+        await seedTableIfEmpty('office_inventory', INITIAL_INVENTORY);
+      }
+
+      // 8. Notices of Violation
+      const remoteNotices = await fetchTableData<NoticeOfViolation>('notices_of_violation');
+      if (remoteNotices && remoteNotices.length > 0) {
+        setNotices(remoteNotices);
+      } else if (remoteNotices && remoteNotices.length === 0) {
+        await seedTableIfEmpty('notices_of_violation', INITIAL_NOTICES);
+      }
+
+      // 9. Complaints
+      const remoteComplaints = await fetchTableData<TouristComplaint>('tourist_complaints');
+      if (remoteComplaints && remoteComplaints.length > 0) {
+        setComplaints(remoteComplaints);
+      } else if (remoteComplaints && remoteComplaints.length === 0) {
+        await seedTableIfEmpty('tourist_complaints', INITIAL_COMPLAINTS);
+      }
+
+      // 10. Feedbacks
+      const remoteFeedbacks = await fetchTableData<TouristFeedback>('tourist_feedback');
+      if (remoteFeedbacks && remoteFeedbacks.length > 0) {
+        setFeedbacks(remoteFeedbacks);
+      } else if (remoteFeedbacks && remoteFeedbacks.length === 0) {
+        await seedTableIfEmpty('tourist_feedback', INITIAL_FEEDBACKS);
+      }
+
+      // 11. Documents
+      const remoteDocs = await fetchTableData<OfficialDocument>('official_documents');
+      if (remoteDocs && remoteDocs.length > 0) {
+        setDocuments(remoteDocs);
+      } else if (remoteDocs && remoteDocs.length === 0) {
+        await seedTableIfEmpty('official_documents', INITIAL_DOCUMENTS);
+      }
+
+      // 12. Audit Logs
+      const remoteLogs = await fetchTableData<AuditLogEntry>('audit_logs');
+      if (remoteLogs && remoteLogs.length > 0) {
+        setAuditLogs(remoteLogs);
+      } else if (remoteLogs && remoteLogs.length === 0) {
+        await seedTableIfEmpty('audit_logs', INITIAL_AUDIT_LOGS);
+      }
+    } catch (err) {
+      console.warn('[Supabase Sync] Exception during sync cycle:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      syncWithSupabase();
+    }
+  }, []);
+
   // Audit logging helper
   const addAuditLog = (action: AuditLogEntry['action'], module: string, details: string) => {
     const entry: AuditLogEntry = {
@@ -419,6 +561,11 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       details,
     };
     setAuditLogs((prev) => [entry, ...prev.slice(0, 199)]);
+    if (isSupabaseConfigured) {
+      insertTableRow('audit_logs', entry).catch((err) =>
+        console.warn('[Supabase Sync] addAuditLog failed:', err)
+      );
+    }
   };
 
   const updateMunicipalityInfo = (info: Partial<typeof MUNICIPALITY_INFO>) => {
@@ -470,17 +617,32 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setTourists((prev) => [newTourist, ...prev]);
     addAuditLog('CREATE', 'Tourist Arrival Management', `Registered visitor ${newTourist.name} (${newTourist.touristId})`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourist_arrivals', newTourist).catch((err) =>
+        console.warn('[Supabase Sync] addTourist failed:', err)
+      );
+    }
   };
 
   const updateTourist = (id: string, updated: Partial<TouristArrival>) => {
     setTourists((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
     addAuditLog('UPDATE', 'Tourist Arrival Management', `Updated visitor record ID ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourist_arrivals', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateTourist failed:', err)
+      );
+    }
   };
 
   const deleteTourist = (id: string) => {
     const target = tourists.find((t) => t.id === id);
     setTourists((prev) => prev.filter((t) => t.id !== id));
     addAuditLog('DELETE', 'Tourist Arrival Management', `Removed visitor record ${target?.name || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourist_arrivals', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteTourist failed:', err)
+      );
+    }
   };
 
   const addEstablishment = (estData: Omit<TourismEstablishment, 'id'>) => {
@@ -490,17 +652,32 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setEstablishments((prev) => [newEst, ...prev]);
     addAuditLog('CREATE', 'Tourism Establishment Database', `Registered enterprise ${newEst.name} under ${newEst.category}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourism_establishments', newEst).catch((err) =>
+        console.warn('[Supabase Sync] addEstablishment failed:', err)
+      );
+    }
   };
 
   const updateEstablishment = (id: string, updated: Partial<TourismEstablishment>) => {
     setEstablishments((prev) => prev.map((e) => (e.id === id ? { ...e, ...updated } : e)));
     addAuditLog('UPDATE', 'Tourism Establishment Database', `Updated enterprise record ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourism_establishments', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateEstablishment failed:', err)
+      );
+    }
   };
 
   const deleteEstablishment = (id: string) => {
     const target = establishments.find((e) => e.id === id);
     setEstablishments((prev) => prev.filter((e) => e.id !== id));
     addAuditLog('DELETE', 'Tourism Establishment Database', `Archived enterprise ${target?.name || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourism_establishments', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteEstablishment failed:', err)
+      );
+    }
   };
 
   const addMsme = (msmeData: Omit<MSMETourism, 'id'>) => {
@@ -510,16 +687,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setMsmes((prev) => [newMsme, ...prev]);
     addAuditLog('CREATE', 'MSME Tourism Database', `Enrolled MSME ${newMsme.name}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('msme_tourism', newMsme).catch((err) =>
+        console.warn('[Supabase Sync] addMsme failed:', err)
+      );
+    }
   };
 
   const updateMsme = (id: string, updated: Partial<MSMETourism>) => {
     setMsmes((prev) => prev.map((m) => (m.id === id ? { ...m, ...updated } : m)));
     addAuditLog('UPDATE', 'MSME Tourism Database', `Modified MSME record ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('msme_tourism', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateMsme failed:', err)
+      );
+    }
   };
 
   const deleteMsme = (id: string) => {
     setMsmes((prev) => prev.filter((m) => m.id !== id));
     addAuditLog('DELETE', 'MSME Tourism Database', `Removed MSME ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('msme_tourism', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteMsme failed:', err)
+      );
+    }
   };
 
   const addDestination = (destData: Omit<TourismDestination, 'id'>) => {
@@ -529,16 +721,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setDestinations((prev) => [newDest, ...prev]);
     addAuditLog('CREATE', 'Tourism Destination Database', `Added tourism attraction ${newDest.siteName}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourism_destinations', newDest).catch((err) =>
+        console.warn('[Supabase Sync] addDestination failed:', err)
+      );
+    }
   };
 
   const updateDestination = (id: string, updated: Partial<TourismDestination>) => {
     setDestinations((prev) => prev.map((d) => (d.id === id ? { ...d, ...updated } : d)));
     addAuditLog('UPDATE', 'Tourism Destination Database', `Updated destination ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourism_destinations', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateDestination failed:', err)
+      );
+    }
   };
 
   const deleteDestination = (id: string) => {
     setDestinations((prev) => prev.filter((d) => d.id !== id));
     addAuditLog('DELETE', 'Tourism Destination Database', `Removed destination ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourism_destinations', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteDestination failed:', err)
+      );
+    }
   };
 
   const addEvent = (evData: Omit<TourismEvent, 'id'>) => {
@@ -548,16 +755,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setEvents((prev) => [newEvent, ...prev]);
     addAuditLog('CREATE', 'Events Management System', `Created event ${newEvent.eventName}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourism_events', newEvent).catch((err) =>
+        console.warn('[Supabase Sync] addEvent failed:', err)
+      );
+    }
   };
 
   const updateEvent = (id: string, updated: Partial<TourismEvent>) => {
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updated } : e)));
     addAuditLog('UPDATE', 'Events Management System', `Updated event details ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourism_events', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateEvent failed:', err)
+      );
+    }
   };
 
   const deleteEvent = (id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
     addAuditLog('DELETE', 'Events Management System', `Deleted event ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourism_events', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteEvent failed:', err)
+      );
+    }
   };
 
   // Personnel & Inventory
@@ -568,16 +790,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setEmployees((prev) => [newEmp, ...prev]);
     addAuditLog('CREATE', 'Administrative & Finance', `Added employee record for ${newEmp.name}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('employees', newEmp).catch((err) =>
+        console.warn('[Supabase Sync] addEmployee failed:', err)
+      );
+    }
   };
 
   const updateEmployee = (id: string, updated: Partial<EmployeeRecord>) => {
     setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, ...updated } : e)));
     addAuditLog('UPDATE', 'Administrative & Finance', `Updated employee ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('employees', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateEmployee failed:', err)
+      );
+    }
   };
 
   const deleteEmployee = (id: string) => {
     setEmployees((prev) => prev.filter((e) => e.id !== id));
     addAuditLog('DELETE', 'Administrative & Finance', `Removed employee ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('employees', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteEmployee failed:', err)
+      );
+    }
   };
 
   const addInventoryItem = (itemData: Omit<OfficeInventoryItem, 'id'>) => {
@@ -587,16 +824,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setInventory((prev) => [newItem, ...prev]);
     addAuditLog('CREATE', 'Office Inventory', `Registered property item ${newItem.propertyNumber}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('office_inventory', newItem).catch((err) =>
+        console.warn('[Supabase Sync] addInventoryItem failed:', err)
+      );
+    }
   };
 
   const updateInventoryItem = (id: string, updated: Partial<OfficeInventoryItem>) => {
     setInventory((prev) => prev.map((item) => (item.id === id ? { ...item, ...updated } : item)));
     addAuditLog('UPDATE', 'Office Inventory', `Updated item ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('office_inventory', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateInventoryItem failed:', err)
+      );
+    }
   };
 
   const deleteInventoryItem = (id: string) => {
     setInventory((prev) => prev.filter((item) => item.id !== id));
     addAuditLog('DELETE', 'Office Inventory', `Archived inventory item ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('office_inventory', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteInventoryItem failed:', err)
+      );
+    }
   };
 
   const updateFinancial = (updated: Partial<FinancialMonitoringRecord>) => {
@@ -627,17 +879,32 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newNot: NoticeOfViolation = { id: `nov-${Date.now()}`, ...notData };
     setNotices((prev) => [newNot, ...prev]);
     addAuditLog('CREATE', 'Policy Support & Regulation', `Issued notice of violation to ${newNot.establishmentName}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('notices_of_violation', newNot).catch((err) =>
+        console.warn('[Supabase Sync] addNotice failed:', err)
+      );
+    }
   };
 
   const resolveNotice = (id: string) => {
     setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, status: 'Resolved & Cleared' } : n)));
     addAuditLog('RESOLVE', 'Policy Support & Regulation', `Resolved notice of violation ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('notices_of_violation', id, { status: 'Resolved & Cleared' }).catch((err) =>
+        console.warn('[Supabase Sync] resolveNotice failed:', err)
+      );
+    }
   };
 
   const addComplaint = (compData: Omit<TouristComplaint, 'id'>) => {
     const newComp: TouristComplaint = { id: `comp-${Date.now()}`, ...compData };
     setComplaints((prev) => [newComp, ...prev]);
     addAuditLog('CREATE', 'Tourist Feedback & Grievance', `Logged tourist complaint ${newComp.trackingNumber} against ${newComp.targetEntity}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourist_complaints', newComp).catch((err) =>
+        console.warn('[Supabase Sync] addComplaint failed:', err)
+      );
+    }
   };
 
   const updateComplaintStatus = (id: string, status: TouristComplaint['status'], resolutionNotes?: string) => {
@@ -645,6 +912,11 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       prev.map((c) => (c.id === id ? { ...c, status, resolutionNotes: resolutionNotes || c.resolutionNotes } : c))
     );
     addAuditLog('RESOLVE', 'Tourist Feedback & Grievance', `Updated complaint ${id} status to ${status}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourist_complaints', id, { status, ...(resolutionNotes ? { resolutionNotes } : {}) }).catch((err) =>
+        console.warn('[Supabase Sync] updateComplaintStatus failed:', err)
+      );
+    }
   };
 
   const updateComplaint = (id: string, updated: Partial<TouristComplaint>) => {
@@ -652,11 +924,21 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
     );
     addAuditLog('UPDATE', 'Tourist Feedback & Grievance', `Updated complaint dossier ${id}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourist_complaints', id, updated).catch((err) =>
+        console.warn('[Supabase Sync] updateComplaint failed:', err)
+      );
+    }
   };
 
   const deleteComplaint = (id: string) => {
     setComplaints((prev) => prev.filter((c) => c.id !== id));
     addAuditLog('DELETE', 'Tourist Feedback & Grievance', `Deleted complaint record ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourist_complaints', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteComplaint failed:', err)
+      );
+    }
   };
 
   // Feedback & Satisfaction Tracking
@@ -664,16 +946,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newFb: TouristFeedback = { id: `fb-${Date.now()}`, ...fbData };
     setFeedbacks((prev) => [newFb, ...prev]);
     addAuditLog('CREATE', 'Tourist Feedback & Grievance', `Logged visitor satisfaction survey ${newFb.referenceNumber} for ${newFb.destinationVisited}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourist_feedback', newFb).catch((err) =>
+        console.warn('[Supabase Sync] addFeedback failed:', err)
+      );
+    }
   };
 
   const updateFeedbackStatus = (id: string, status: TouristFeedback['status']) => {
     setFeedbacks((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f)));
     addAuditLog('UPDATE', 'Tourist Feedback & Grievance', `Updated feedback ${id} status to ${status}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('tourist_feedback', id, { status }).catch((err) =>
+        console.warn('[Supabase Sync] updateFeedbackStatus failed:', err)
+      );
+    }
   };
 
   const deleteFeedback = (id: string) => {
     setFeedbacks((prev) => prev.filter((f) => f.id !== id));
     addAuditLog('DELETE', 'Tourist Feedback & Grievance', `Deleted feedback entry ${id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourist_feedback', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteFeedback failed:', err)
+      );
+    }
   };
 
   // Products, Marketing, Social
@@ -729,6 +1026,11 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newDoc: OfficialDocument = { id: `doc-${Date.now()}`, ...docData };
     setDocuments((prev) => [newDoc, ...prev]);
     addAuditLog('CREATE', 'Document Management System', `Archived official document ${newDoc.controlNumber}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('official_documents', newDoc).catch((err) =>
+        console.warn('[Supabase Sync] addDocument failed:', err)
+      );
+    }
   };
 
   // Notifications
@@ -836,6 +1138,9 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <TourismContext.Provider
       value={{
+        isSupabaseConnected,
+        isSyncing,
+        syncWithSupabase,
         currentUser,
         setCurrentUser,
         users: INITIAL_USERS,

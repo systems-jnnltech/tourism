@@ -1490,16 +1490,30 @@ export const TouristArrivalView: React.FC = () => {
 
             {/* Printable Pass Body */}
             <div id="printable-visitor-pass" className="p-6 bg-white space-y-4 text-slate-900 font-sans">
-              {/* Official Seal & Header */}
-              <div className="text-center border-b border-slate-200 pb-4">
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  Republic of the Philippines • Province of Sarangani
-                </div>
-                <h2 className="text-base font-black text-slate-900 uppercase tracking-tight mt-0.5">
-                  Municipality of Malungon
-                </h2>
-                <div className="text-xs font-semibold text-emerald-800">
-                  Municipal Tourism Office • Visitor Clearance Token
+              {/* Official Seal & Header with Dual Logos */}
+              <div className="border-b border-slate-200 pb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <img
+                    src="/logo/LGU_LOGO1.png"
+                    alt="Official Seal of Malungon"
+                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0"
+                  />
+                  <div className="text-center flex-1">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      Republic of the Philippines • Province of Sarangani
+                    </div>
+                    <h2 className="text-base font-black text-slate-900 uppercase tracking-tight mt-0.5">
+                      Municipality of Malungon
+                    </h2>
+                    <div className="text-xs font-semibold text-emerald-800">
+                      Municipal Tourism Office • Visitor Clearance Token
+                    </div>
+                  </div>
+                  <img
+                    src="/logo/TourismLogo.png"
+                    alt="Municipal Tourism Office Logo"
+                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0"
+                  />
                 </div>
               </div>
 

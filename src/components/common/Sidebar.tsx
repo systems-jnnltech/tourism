@@ -223,12 +223,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         `}
       >
         {/* Office Header Indicator */}
-        <div className="p-3.5 border-b border-slate-800 bg-slate-950/40 shrink-0">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>SYSTEM MODULE DIRECTORY</span>
+        <div className="p-3 border-b border-slate-800 bg-slate-950/40 shrink-0 flex items-center gap-2.5">
+          <img
+            src="/logo/TourismLogo.png"
+            alt="Tourism Office"
+            className="w-8 h-8 object-contain rounded-full bg-slate-800/80 p-0.5 border border-emerald-500/30 shrink-0"
+          />
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+              <span>SYSTEM DIRECTORY</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5 font-medium truncate">15 Operational Units</p>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">15 Integrated Operations Units</p>
         </div>
 
         {/* Module Navigation Groups */}

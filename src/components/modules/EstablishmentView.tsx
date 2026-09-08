@@ -1449,16 +1449,30 @@ export const EstablishmentView: React.FC = () => {
 
             {/* Printable Certificate Body */}
             <div id="printable-accreditation-certificate" className="p-8 bg-white space-y-6 text-slate-900 font-sans border-8 border-emerald-950/10 m-2 rounded-xl">
-              {/* Header Letterhead */}
-              <div className="text-center space-y-1 border-b-2 border-emerald-800 pb-4">
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  Republic of the Philippines • Province of Sarangani
-                </div>
-                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                  Municipality of Malungon
-                </h2>
-                <div className="text-xs font-bold text-emerald-900 tracking-wide uppercase">
-                  Municipal Tourism Office • Regulatory & Standards Section
+              {/* Header Letterhead with Official Dual Logos */}
+              <div className="border-b-2 border-emerald-800 pb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <img
+                    src="/logo/LGU_LOGO1.png"
+                    alt="Official Seal of Malungon"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+                  />
+                  <div className="text-center space-y-0.5 flex-1">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-serif">
+                      Republic of the Philippines • Province of Sarangani
+                    </div>
+                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight font-serif">
+                      Municipality of Malungon
+                    </h2>
+                    <div className="text-xs font-bold text-emerald-900 tracking-wide uppercase font-serif">
+                      Municipal Tourism Office • Regulatory & Standards Section
+                    </div>
+                  </div>
+                  <img
+                    src="/logo/TourismLogo.png"
+                    alt="Municipal Tourism Office Logo"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+                  />
                 </div>
               </div>
 

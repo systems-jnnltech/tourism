@@ -83,14 +83,16 @@ export const GrievanceResolutionModal: React.FC<GrievanceResolutionModalProps> =
 
           {/* Official Letterhead */}
           <div className="text-center pb-6 border-b-2 border-slate-800 relative z-10">
-            <div className="flex items-center justify-center gap-4 mb-2">
-              <div className="w-16 h-16 rounded-full bg-emerald-900 text-amber-300 flex items-center justify-center font-bold text-lg border-2 border-amber-400/70 shadow-xs print:border-slate-800">
-                LGU
-              </div>
-              <div>
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <img
+                src="/logo/LGU_LOGO1.png"
+                alt="Official Seal of Malungon"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+              />
+              <div className="text-center flex-1">
                 <p className="text-xs tracking-widest uppercase font-semibold text-slate-600 font-sans">Republic of the Philippines</p>
                 <p className="text-xs tracking-widest uppercase font-semibold text-slate-600 font-sans">{municipalityInfo.province}</p>
-                <h1 className="text-xl font-bold uppercase tracking-wider text-slate-900 font-sans">
+                <h1 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-slate-900 font-sans">
                   {municipalityInfo.name}
                 </h1>
                 <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide font-sans mt-0.5">
@@ -100,9 +102,11 @@ export const GrievanceResolutionModal: React.FC<GrievanceResolutionModalProps> =
                   In Compliance with RA No. 11032 (Ease of Doing Business Act) & RA No. 9593 (Tourism Act)
                 </p>
               </div>
-              <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center font-bold text-xs text-slate-700 font-sans">
-                SEAL
-              </div>
+              <img
+                src="/logo/TourismLogo.png"
+                alt="Municipal Tourism Office Logo"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+              />
             </div>
           </div>
 

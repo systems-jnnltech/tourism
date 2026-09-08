@@ -185,19 +185,33 @@ export const ReportsView: React.FC = () => {
 
       {/* Printable Report Canvas */}
       <div id="printable-official-report" className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:p-0 max-w-5xl mx-auto space-y-6 text-slate-800 font-serif">
-        {/* Government Header Banner */}
-        <div className="text-center border-b-2 border-slate-800 pb-5">
-          <p className="text-[11px] uppercase tracking-widest text-slate-500 font-sans font-bold">Republic of the Philippines</p>
-          <p className="text-xs font-bold text-slate-700 font-sans">PROVINCE OF SARANGANI</p>
-          <h1 className="text-lg font-black text-slate-900 uppercase font-sans tracking-wide">
-            Municipality of Malungon
-          </h1>
-          <p className="text-xs font-bold text-emerald-800 font-sans mt-0.5">
-            OFFICE OF THE MUNICIPAL MAYOR • MUNICIPAL TOURISM OFFICE
-          </p>
-          <p className="text-[10px] text-slate-400 font-sans mt-1">
-            Tourism Center Building, Municipal Hall Compound, Poblacion, Malungon | Tel: (083) 555-8687
-          </p>
+        {/* Government Header Banner with Official Dual Logos */}
+        <div className="border-b-2 border-slate-800 pb-5">
+          <div className="flex items-center justify-between gap-4">
+            <img
+              src="/logo/LGU_LOGO1.png"
+              alt="Official Seal of Malungon"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+            />
+            <div className="text-center flex-1">
+              <p className="text-[11px] uppercase tracking-widest text-slate-500 font-sans font-bold">Republic of the Philippines</p>
+              <p className="text-xs font-bold text-slate-700 font-sans">PROVINCE OF SARANGANI</p>
+              <h1 className="text-lg font-black text-slate-900 uppercase font-sans tracking-wide">
+                Municipality of Malungon
+              </h1>
+              <p className="text-xs font-bold text-emerald-800 font-sans mt-0.5">
+                OFFICE OF THE MUNICIPAL MAYOR • MUNICIPAL TOURISM OFFICE
+              </p>
+              <p className="text-[10px] text-slate-400 font-sans mt-1">
+                Tourism Center Building, Municipal Hall Compound, Poblacion, Malungon | Tel: (083) 555-8687
+              </p>
+            </div>
+            <img
+              src="/logo/TourismLogo.png"
+              alt="Municipal Tourism Office Logo"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+            />
+          </div>
         </div>
 
         {/* Report Document Title */}

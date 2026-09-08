@@ -85,11 +85,13 @@ export const EventPermitModal: React.FC<EventPermitModalProps> = ({
 
             {/* Official Header */}
             <div className="text-center pb-6 border-b-2 border-emerald-800/40 relative">
-              <div className="flex items-center justify-center gap-6 mb-2">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-800 flex items-center justify-center p-2 text-emerald-800 font-serif font-black text-xs text-center shadow-xs">
-                  <span>SEAL<br/>1969</span>
-                </div>
-                <div>
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <img
+                  src="/logo/LGU_LOGO1.png"
+                  alt="Official Seal of Malungon"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+                />
+                <div className="text-center flex-1">
                   <h4 className="text-[11px] font-serif uppercase tracking-widest text-slate-600">
                     Republic of the Philippines
                   </h4>
@@ -103,9 +105,11 @@ export const EventPermitModal: React.FC<EventPermitModalProps> = ({
                     MUNICIPAL TOURISM OFFICE & INTER-AGENCY EVENTS TASKFORCE
                   </p>
                 </div>
-                <div className="w-14 h-14 rounded-full bg-emerald-800 text-white flex items-center justify-center text-[10px] font-bold text-center border-2 border-emerald-900 shadow-xs">
-                  <span>MTO<br/>EMS</span>
-                </div>
+                <img
+                  src="/logo/TourismLogo.png"
+                  alt="Municipal Tourism Office Logo"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+                />
               </div>
 
               <div className="mt-4">

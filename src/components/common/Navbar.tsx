@@ -101,10 +101,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 p-0.5 shadow-lg flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-black text-emerald-400 tracking-wider text-xs">
-              MTO
-            </div>
+          {/* Official Dual Logos: LGU Malungon Seal & Tourism Logo */}
+          <div className="flex items-center space-x-1.5 shrink-0">
+            <img
+              src="/logo/LGU_LOGO1.png"
+              alt="Official Seal of the Municipality of Malungon"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5"
+            />
+            <img
+              src="/logo/TourismLogo.png"
+              alt="Malungon Municipal Tourism Office Logo"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 hidden xs:block"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">

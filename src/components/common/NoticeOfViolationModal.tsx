@@ -102,25 +102,39 @@ export const NoticeOfViolationModal: React.FC<NoticeOfViolationModalProps> = ({
           className="p-6 sm:p-10 bg-white text-slate-900 font-serif max-w-3xl mx-auto space-y-6 print:p-0 print:border-none print:shadow-none"
         >
           {/* Government Letterhead Header */}
-          <div className="text-center border-b-2 border-slate-900 pb-5">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500 font-sans font-bold">
-              Republic of the Philippines
-            </p>
-            <p className="text-xs font-bold text-slate-800 font-sans">
-              PROVINCE OF SARANGANI
-            </p>
-            <h1 className="text-lg font-black text-slate-950 uppercase font-sans tracking-wide">
-              Municipality of Malungon
-            </h1>
-            <p className="text-xs font-bold text-rose-900 font-sans mt-0.5">
-              OFFICE OF THE MUNICIPAL MAYOR • MUNICIPAL TOURISM OFFICE
-            </p>
-            <p className="text-[11px] font-sans font-semibold text-slate-600">
-              JOINT MUNICIPAL TOURISM INSPECTION & REGULATORY COMPLIANCE TEAM
-            </p>
-            <p className="text-[10px] text-slate-400 font-sans mt-0.5">
-              Tourism Center Building, Municipal Hall Compound, Poblacion, Malungon, Sarangani | Contact: (083) 555-8687
-            </p>
+          <div className="border-b-2 border-slate-900 pb-5">
+            <div className="flex items-center justify-between gap-4">
+              <img
+                src="/logo/LGU_LOGO1.png"
+                alt="Official Seal of Malungon"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+              />
+              <div className="text-center flex-1">
+                <p className="text-[11px] uppercase tracking-widest text-slate-500 font-sans font-bold">
+                  Republic of the Philippines
+                </p>
+                <p className="text-xs font-bold text-slate-800 font-sans">
+                  PROVINCE OF SARANGANI
+                </p>
+                <h1 className="text-lg font-black text-slate-950 uppercase font-sans tracking-wide">
+                  Municipality of Malungon
+                </h1>
+                <p className="text-xs font-bold text-rose-900 font-sans mt-0.5">
+                  OFFICE OF THE MUNICIPAL MAYOR • MUNICIPAL TOURISM OFFICE
+                </p>
+                <p className="text-[11px] font-sans font-semibold text-slate-600">
+                  JOINT MUNICIPAL TOURISM INSPECTION & REGULATORY COMPLIANCE TEAM
+                </p>
+                <p className="text-[10px] text-slate-400 font-sans mt-0.5">
+                  Tourism Center Building, Municipal Hall Compound, Poblacion, Malungon, Sarangani | Contact: (083) 555-8687
+                </p>
+              </div>
+              <img
+                src="/logo/TourismLogo.png"
+                alt="Municipal Tourism Office Logo"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-xs"
+              />
+            </div>
           </div>
 
           {/* Document Reference Badge & Date */}

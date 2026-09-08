@@ -20,6 +20,7 @@ import {
 import { useTourism } from '../../context/TourismContext';
 import { VisitorAssistanceLog, LostAndFoundItem } from '../../types';
 import { FeedbackGrievanceView } from './FeedbackGrievanceView';
+import { ReleaseLostItemModal } from '../common/ReleaseLostItemModal';
 
 export interface TIACViewProps {
   initialTab?: 'assistance' | 'lostfound' | 'tfrgs';
@@ -79,6 +80,16 @@ export const TIACView: React.FC<TIACViewProps> = ({
     foundBy: 'Tourism Information Desk Staff',
     status: 'Unclaimed',
   });
+
+  // Modal State for Release Property to Claimant
+  const [selectedLostItemForRelease, setSelectedLostItemForRelease] = useState<LostAndFoundItem | null>(null);
+  const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
+
+  const handleConfirmReleaseItem = (id: string, claimantSummary: string, releaseDate: string) => {
+    claimLostItem(id, claimantSummary, releaseDate);
+    setIsReleaseModalOpen(false);
+    setSelectedLostItemForRelease(null);
+  };
 
   const filteredLogs = tiacLogs.filter((log) => {
     const matchesSearch =
@@ -353,18 +364,30 @@ export const TIACView: React.FC<TIACViewProps> = ({
                         >
                           {item.status}
                         </span>
+                        {item.status === 'Claimed by Owner' && item.claimantName && (
+                          <div className="mt-1 text-[10px] text-slate-500 max-w-xs">
+                            <span className="font-semibold text-slate-700">Claimant:</span> {item.claimantName}
+                            {item.dateClaimed && (
+                              <div className="text-slate-400 font-mono text-[10px]">
+                                Released: {item.dateClaimed}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {!isReadOnly && item.status === 'Unclaimed' && (
                             <button
+                              type="button"
                               onClick={() => {
-                                const claimant = prompt('Enter claimant full name and ID presented:');
-                                if (claimant) claimLostItem(item.id, claimant);
+                                setSelectedLostItemForRelease(item);
+                                setIsReleaseModalOpen(true);
                               }}
-                              className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-xs font-semibold border border-emerald-200 transition-colors"
+                              className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-xs font-semibold border border-emerald-200 transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
                             >
-                              Release to Owner
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Release to Owner</span>
                             </button>
                           )}
                           {!isReadOnly && (
@@ -539,6 +562,18 @@ export const TIACView: React.FC<TIACViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Release Property to Claimant Modal */}
+      <ReleaseLostItemModal
+        isOpen={isReleaseModalOpen}
+        onClose={() => {
+          setIsReleaseModalOpen(false);
+          setSelectedLostItemForRelease(null);
+        }}
+        item={selectedLostItemForRelease}
+        officerName={currentUser?.name || 'Desk Officer'}
+        onConfirmRelease={handleConfirmReleaseItem}
+      />
     </div>
   );
 };

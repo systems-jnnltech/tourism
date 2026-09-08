@@ -211,7 +211,7 @@ interface TourismContextType {
 
   lostAndFound: LostAndFoundItem[];
   addLostItem: (item: Omit<LostAndFoundItem, 'id'>) => void;
-  claimLostItem: (id: string, claimantName: string) => void;
+  claimLostItem: (id: string, claimantName: string, dateClaimed?: string) => void;
   deleteLostItem: (id: string) => void;
 
   // Documents
@@ -1727,8 +1727,8 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const claimLostItem = (id: string, claimantName: string) => {
-    const dateClaimed = new Date().toISOString().substring(0, 10);
+  const claimLostItem = (id: string, claimantName: string, customDateClaimed?: string) => {
+    const dateClaimed = customDateClaimed || new Date().toISOString().substring(0, 10);
     setLostAndFound((prev) =>
       prev.map((item) =>
         item.id === id

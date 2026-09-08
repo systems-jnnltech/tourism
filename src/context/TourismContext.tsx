@@ -224,36 +224,43 @@ interface TourismContextType {
 
 const TourismContext = createContext<TourismContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'mtodms_malungon_v1';
+const STORAGE_KEY = 'mtodms_malungon_v2';
 
 export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Users state initialized from localStorage or INITIAL_USERS (with automatic legacy demo cleanup)
+  // Purge legacy v1 demo data from browser storage on mount
+  useEffect(() => {
+    try {
+      const v1Keys = Object.keys(localStorage).filter((k) => k.startsWith('mtodms_malungon_v1'));
+      for (const k of v1Keys) {
+        localStorage.removeItem(k);
+      }
+    } catch (e) {
+      console.warn('Legacy v1 storage purge error:', e);
+    }
+  }, []);
+
+  // Users state initialized from localStorage or INITIAL_USERS (clean slate)
   const [users, setUsers] = useState<UserProfile[]>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_users`);
       if (saved) {
         const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      // Migrate v1 users if present
+      const v1Saved = localStorage.getItem('mtodms_malungon_v1_users');
+      if (v1Saved) {
+        const parsed = JSON.parse(v1Saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Check if storage contains old demo users or lacks Junniell Mahinay
-          const hasJunniell = parsed.some((u: UserProfile) => u.email.toLowerCase() === 'systems@malungon.gov.ph');
-          const hasLegacyDemos = parsed.some((u: UserProfile) => 
-            u.id === 'usr-1' || 
-            u.id === 'usr-3' || 
-            u.email === 'admin.tourism@malungon.gov.ph' ||
-            u.email === 'visitor@public.gov.ph'
-          );
-
-          if (!hasJunniell || hasLegacyDemos) {
-            // Filter out old demo user IDs while keeping any newly created custom accounts
-            const customCreatedUsers = parsed.filter((u: UserProfile) => {
-              const isOldDemoId = ['usr-1', 'usr-2', 'usr-3', 'usr-4', 'usr-5', 'usr-6', 'usr-7', 'usr-8', 'usr-9', 'usr-10', 'usr-11'].includes(u.id);
-              return !isOldDemoId && u.id !== 'usr-admin' && u.id !== 'usr-officer';
-            });
-            const cleaned = [...INITIAL_USERS, ...customCreatedUsers];
-            localStorage.setItem(`${STORAGE_KEY}_users`, JSON.stringify(cleaned));
-            return cleaned;
+          const nonMock = parsed.filter((u: UserProfile) => u.id === 'usr-admin' || u.id === 'usr-officer' || !u.id.startsWith('usr-'));
+          const merged = [...INITIAL_USERS];
+          for (const u of nonMock) {
+            if (!merged.some(m => m.email.toLowerCase() === u.email.toLowerCase())) {
+              merged.push(u);
+            }
           }
-          return parsed;
+          localStorage.setItem(`${STORAGE_KEY}_users`, JSON.stringify(merged));
+          return merged;
         }
       }
       return INITIAL_USERS;
@@ -274,11 +281,10 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Current session user (null if not logged in; auto-clears if session was an old demo account)
   const [currentUser, setCurrentUserState] = useState<UserProfile | null>(() => {
     try {
-      const savedSession = localStorage.getItem(`${STORAGE_KEY}_session_user`);
+      const savedSession = localStorage.getItem(`${STORAGE_KEY}_session_user`) || localStorage.getItem('mtodms_malungon_v1_session_user');
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
         if (parsed && parsed.id) {
-          // Invalidate session if it was a legacy demo account
           const isLegacy = ['usr-1', 'usr-2', 'usr-3', 'usr-4', 'usr-5', 'usr-6', 'usr-7', 'usr-8', 'usr-9', 'usr-10', 'usr-11'].includes(parsed.id) ||
             parsed.email === 'admin.tourism@malungon.gov.ph' ||
             parsed.email === 'visitor@public.gov.ph';
@@ -286,6 +292,7 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
             localStorage.removeItem(`${STORAGE_KEY}_session_user`);
             return null;
           }
+          localStorage.setItem(`${STORAGE_KEY}_session_user`, JSON.stringify(parsed));
           return parsed;
         }
       }

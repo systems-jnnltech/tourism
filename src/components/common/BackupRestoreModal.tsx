@@ -63,11 +63,11 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
   };
 
   const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset the MTODMS database to official baseline seed data? Current unsaved entries will be overwritten.')) {
+    if (window.confirm('Are you sure you want to reset the MTODMS database to a clean production slate? All current entries will be cleared and only official administrative accounts will be preserved.')) {
       resetToDefaultData();
       setStatusMessage({
         type: 'success',
-        text: 'Database successfully re-seeded with official municipal baseline records.',
+        text: 'Database successfully reset to clean production slate.',
       });
     }
   };
@@ -170,17 +170,17 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
               <div>
                 <h4 className="font-semibold text-amber-900 text-sm flex items-center gap-1.5">
                   <RefreshCw className="w-4 h-4 text-amber-700" />
-                  Reset to Baseline Municipal Seeds
+                  Reset to Clean Production State
                 </h4>
                 <p className="text-xs text-amber-700 mt-1 max-w-sm">
-                  Reload all official pre-configured destinations, accredited establishments, sample visitor returns, and municipal bylaws.
+                  Clear all transactional records across modules and initialize the clean municipal production baseline.
                 </p>
               </div>
               <button
                 onClick={handleReset}
                 className="px-3.5 py-2 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-semibold transition-colors shrink-0"
               >
-                Reset Data
+                Reset to Clean Slate
               </button>
             </div>
           </div>

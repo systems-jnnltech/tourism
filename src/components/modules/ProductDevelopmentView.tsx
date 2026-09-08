@@ -13,13 +13,14 @@ import {
   Coins,
   Plus,
   Calculator,
-  ShieldCheck
+  ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { AddProductModal } from '../common/AddProductModal';
 
 export const ProductDevelopmentView: React.FC = () => {
-  const { products } = useTourism();
+  const { products, deleteProduct, isReadOnly } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Circuit Cost & Revenue Share Estimator State
@@ -80,6 +81,12 @@ export const ProductDevelopmentView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Tourism circuits packaging, community-based tourism (CBT) incubation, and investment pipelines.
           </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+              Cloud Synced (Table #19)
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -337,6 +344,7 @@ export const ProductDevelopmentView: React.FC = () => {
                 <th className="px-3 py-3">Readiness Status</th>
                 <th className="px-3 py-3">Evaluation Score</th>
                 <th className="px-3 py-3">Investment Required</th>
+                <th className="px-3 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -387,6 +395,21 @@ export const ProductDevelopmentView: React.FC = () => {
 
                   <td className="px-3 py-3 font-semibold text-slate-800 font-mono">
                     ₱{prod.investmentRequired.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Delete product "${prod.productName}"?`)) {
+                            deleteProduct(prod.id);
+                          }
+                        }}
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                        title="Delete Product"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

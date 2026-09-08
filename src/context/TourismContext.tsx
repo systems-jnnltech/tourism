@@ -164,9 +164,11 @@ interface TourismContextType {
   // Research & Policies
   research: TourismResearch[];
   addResearch: (res: Omit<TourismResearch, 'id'>) => void;
+  deleteResearch: (id: string) => void;
 
   policies: TourismPolicy[];
   addPolicy: (pol: Omit<TourismPolicy, 'id'>) => void;
+  deletePolicy: (id: string) => void;
 
   notices: NoticeOfViolation[];
   addNotice: (not: Omit<NoticeOfViolation, 'id'>) => void;
@@ -187,6 +189,7 @@ interface TourismContextType {
   // Product Dev
   products: TourismProduct[];
   addProduct: (prod: Omit<TourismProduct, 'id'>) => void;
+  deleteProduct: (id: string) => void;
 
   // Marketing & Social
   campaigns: MarketingCampaign[];
@@ -195,8 +198,10 @@ interface TourismContextType {
   deleteCampaign: (id: string) => void;
 
   socialMetrics: SocialMediaPlatformStat[];
+  updateSocialMetric: (platform: SocialMediaPlatformStat['platform'], updated: Partial<SocialMediaPlatformStat>) => void;
   scheduledPosts: ScheduledPost[];
   addScheduledPost: (post: Omit<ScheduledPost, 'id'>) => void;
+  deleteScheduledPost: (id: string) => void;
 
   // TIAC
   tiacLogs: VisitorAssistanceLog[];
@@ -459,7 +464,10 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : INITIAL_CAMPAIGNS;
   });
 
-  const [socialMetrics] = useState<SocialMediaPlatformStat[]>(INITIAL_SOCIAL_METRICS);
+  const [socialMetrics, setSocialMetrics] = useState<SocialMediaPlatformStat[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_social_metrics`);
+    return saved ? JSON.parse(saved) : INITIAL_SOCIAL_METRICS;
+  });
 
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_scheduled_posts`);
@@ -580,6 +588,10 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_campaigns`, JSON.stringify(campaigns));
   }, [campaigns]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_social_metrics`, JSON.stringify(socialMetrics));
+  }, [socialMetrics]);
 
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_scheduled_posts`, JSON.stringify(scheduledPosts));
@@ -761,6 +773,59 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const toSeed = lostAndFound.length > 0 ? lostAndFound : INITIAL_LOST_AND_FOUND;
         if (toSeed.length > 0) {
           await seedTableIfEmpty('lost_and_found_items', toSeed);
+        }
+      }
+
+      // 17. Financial Monitoring & Budget (AFS)
+      const remoteFinancial = await fetchTableData<FinancialMonitoringRecord>('financial_monitoring');
+      if (remoteFinancial && remoteFinancial.length > 0) {
+        setFinancial(remoteFinancial[0]);
+      } else if (remoteFinancial && remoteFinancial.length === 0) {
+        const toSeed = financial.annualBudget > 0 ? financial : INITIAL_FINANCIAL;
+        await seedTableIfEmpty('financial_monitoring', [toSeed]);
+      }
+
+      // 18. Municipal Tourism Policies & Ordinances (PSRU)
+      const remotePolicies = await fetchTableData<TourismPolicy>('tourism_policies');
+      if (remotePolicies && remotePolicies.length > 0) {
+        setPolicies(remotePolicies);
+      } else if (remotePolicies && remotePolicies.length === 0) {
+        const toSeed = policies.length > 0 ? policies : INITIAL_POLICIES;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('tourism_policies', toSeed);
+        }
+      }
+
+      // 19. Tourism Products & Curated Circuits (TPDU)
+      const remoteProducts = await fetchTableData<TourismProduct>('tourism_products');
+      if (remoteProducts && remoteProducts.length > 0) {
+        setProducts(remoteProducts);
+      } else if (remoteProducts && remoteProducts.length === 0) {
+        const toSeed = products.length > 0 ? products : INITIAL_PRODUCTS;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('tourism_products', toSeed);
+        }
+      }
+
+      // 20. Tourism Research Studies (RPU)
+      const remoteResearch = await fetchTableData<TourismResearch>('tourism_research');
+      if (remoteResearch && remoteResearch.length > 0) {
+        setResearch(remoteResearch);
+      } else if (remoteResearch && remoteResearch.length === 0) {
+        const toSeed = research.length > 0 ? research : INITIAL_RESEARCH;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('tourism_research', toSeed);
+        }
+      }
+
+      // 21. Scheduled Social Media Posts (SMMS)
+      const remotePosts = await fetchTableData<ScheduledPost>('scheduled_posts');
+      if (remotePosts && remotePosts.length > 0) {
+        setScheduledPosts(remotePosts);
+      } else if (remotePosts && remotePosts.length === 0) {
+        const toSeed = scheduledPosts.length > 0 ? scheduledPosts : INITIAL_SCHEDULED_POSTS;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('scheduled_posts', toSeed);
         }
       }
     } catch (err) {
@@ -1322,14 +1387,28 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateFinancial = (updated: Partial<FinancialMonitoringRecord>) => {
+    let nextRecord: FinancialMonitoringRecord | null = null;
     setFinancial((prev) => {
       const next = { ...prev, ...updated };
       if (next.annualBudget > 0) {
         next.fundUtilizationRate = Math.round((next.obligations / next.annualBudget) * 1000) / 10;
       }
+      nextRecord = next;
       return next;
     });
     addAuditLog('UPDATE', 'Financial Monitoring', `Updated municipal tourism budget and obligations metrics`);
+    if (isSupabaseConfigured) {
+      const target = nextRecord || financial;
+      updateTableRow('financial_monitoring', target.id, target).then((success) => {
+        if (!success) {
+          insertTableRow('financial_monitoring', target).catch((err) =>
+            console.warn('[Supabase Sync] insert fallback for financial_monitoring failed:', err)
+          );
+        }
+      }).catch((err) =>
+        console.warn('[Supabase Sync] updateFinancial failed:', err)
+      );
+    }
   };
 
   // Research & Policies
@@ -1337,12 +1416,44 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newRes: TourismResearch = { id: `res-${Date.now()}`, ...resData };
     setResearch((prev) => [newRes, ...prev]);
     addAuditLog('CREATE', 'Research & Planning', `Uploaded tourism study: ${newRes.title}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourism_research', newRes).catch((err) =>
+        console.warn('[Supabase Sync] addResearch failed:', err)
+      );
+    }
+  };
+
+  const deleteResearch = (id: string) => {
+    const target = research.find((r) => r.id === id);
+    setResearch((prev) => prev.filter((r) => r.id !== id));
+    addAuditLog('DELETE', 'Research & Planning', `Removed tourism study: ${target?.title || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourism_research', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteResearch failed:', err)
+      );
+    }
   };
 
   const addPolicy = (polData: Omit<TourismPolicy, 'id'>) => {
     const newPol: TourismPolicy = { id: `pol-${Date.now()}`, ...polData };
     setPolicies((prev) => [newPol, ...prev]);
     addAuditLog('CREATE', 'Policy Support & Regulation', `Registered policy: ${newPol.referenceNumber}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourism_policies', newPol).catch((err) =>
+        console.warn('[Supabase Sync] addPolicy failed:', err)
+      );
+    }
+  };
+
+  const deletePolicy = (id: string) => {
+    const target = policies.find((p) => p.id === id);
+    setPolicies((prev) => prev.filter((p) => p.id !== id));
+    addAuditLog('DELETE', 'Policy Support & Regulation', `Removed policy: ${target?.referenceNumber || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourism_policies', id).catch((err) =>
+        console.warn('[Supabase Sync] deletePolicy failed:', err)
+      );
+    }
   };
 
   const addNotice = (notData: Omit<NoticeOfViolation, 'id'>) => {
@@ -1448,6 +1559,22 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newProd: TourismProduct = { id: `prod-${Date.now()}`, ...prodData };
     setProducts((prev) => [newProd, ...prev]);
     addAuditLog('CREATE', 'Tourism Product Development', `Added product concept ${newProd.productName}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tourism_products', newProd).catch((err) =>
+        console.warn('[Supabase Sync] addProduct failed:', err)
+      );
+    }
+  };
+
+  const deleteProduct = (id: string) => {
+    const target = products.find((p) => p.id === id);
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    addAuditLog('DELETE', 'Tourism Product Development', `Removed product: ${target?.productName || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tourism_products', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteProduct failed:', err)
+      );
+    }
   };
 
   const addCampaign = (campData: Omit<MarketingCampaign, 'id'>) => {
@@ -1488,6 +1615,32 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newPost: ScheduledPost = { id: `sp-${Date.now()}`, ...postData };
     setScheduledPosts((prev) => [newPost, ...prev]);
     addAuditLog('CREATE', 'Social Media Management', `Scheduled ${newPost.platform} post: ${newPost.title}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('scheduled_posts', newPost).catch((err) =>
+        console.warn('[Supabase Sync] addScheduledPost failed:', err)
+      );
+    }
+  };
+
+  const deleteScheduledPost = (id: string) => {
+    const target = scheduledPosts.find((p) => p.id === id);
+    setScheduledPosts((prev) => prev.filter((p) => p.id !== id));
+    addAuditLog('DELETE', 'Social Media Management', `Removed scheduled post: ${target?.title || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('scheduled_posts', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteScheduledPost failed:', err)
+      );
+    }
+  };
+
+  const updateSocialMetric = (
+    platform: SocialMediaPlatformStat['platform'],
+    updated: Partial<SocialMediaPlatformStat>
+  ) => {
+    setSocialMetrics((prev) =>
+      prev.map((item) => (item.platform === platform ? { ...item, ...updated } : item))
+    );
+    addAuditLog('UPDATE', 'Social Media Management', `Updated channel metrics for ${platform}`);
   };
 
   // TIAC & Lost and Found
@@ -1743,8 +1896,10 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateFinancial,
         research,
         addResearch,
+        deleteResearch,
         policies,
         addPolicy,
+        deletePolicy,
         notices,
         addNotice,
         resolveNotice,
@@ -1759,13 +1914,16 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteFeedback,
         products,
         addProduct,
+        deleteProduct,
         campaigns,
         addCampaign,
         updateCampaign,
         deleteCampaign,
         socialMetrics,
+        updateSocialMetric,
         scheduledPosts,
         addScheduledPost,
+        deleteScheduledPost,
         tiacLogs,
         addTiacLog,
         deleteTiacLog,

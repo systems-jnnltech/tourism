@@ -2,6 +2,7 @@
 -- MUNICIPAL TOURISM OFFICE DATABASE MANAGEMENT SYSTEM (MTODMS)
 -- SUPABASE POSTGRESQL PRODUCTION DDL SCHEMA
 -- Municipality of Malungon, Sarangani Province, Region XII
+-- Tables 1 to 21 (100% Full System Coverage)
 -- ==============================================================================
 
 -- Enable UUID extension
@@ -337,6 +338,76 @@ CREATE TABLE IF NOT EXISTS lost_and_found_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 17. Financial Monitoring & Budget Appropriation (AFS)
+CREATE TABLE IF NOT EXISTS financial_monitoring (
+    id TEXT PRIMARY KEY,
+    fiscal_year INTEGER NOT NULL DEFAULT 2026,
+    annual_budget NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    obligations NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    disbursement NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    fund_utilization_rate NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    purchase_requests_count INTEGER NOT NULL DEFAULT 0,
+    purchase_orders_count INTEGER NOT NULL DEFAULT 0,
+    cash_advances_total NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    liquidation_rate NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    annual_procurement_plan_status TEXT NOT NULL DEFAULT 'Approved by BAC',
+    recent_transactions JSONB DEFAULT '[]'::JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 18. Municipal Tourism Policies & Ordinances (PSRU)
+CREATE TABLE IF NOT EXISTS tourism_policies (
+    id TEXT PRIMARY KEY,
+    reference_number TEXT NOT NULL,
+    title TEXT NOT NULL,
+    type TEXT NOT NULL,
+    date_approved DATE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Enforced',
+    summary TEXT NOT NULL,
+    penalties TEXT,
+    compliance_rate TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 19. Tourism Products & Curated Circuits (TPDU)
+CREATE TABLE IF NOT EXISTS tourism_products (
+    id TEXT PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    cluster TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    target_market TEXT NOT NULL,
+    community_stakeholders TEXT NOT NULL,
+    investment_required NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    capacity_building_conducted TEXT[] DEFAULT '{}',
+    evaluation_score INTEGER NOT NULL DEFAULT 90,
+    readiness_status TEXT NOT NULL DEFAULT 'Ready for Promotion',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 20. Tourism Research & Carrying Capacity Studies (RPU)
+CREATE TABLE IF NOT EXISTS tourism_research (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    lead_researcher TEXT NOT NULL,
+    year INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    key_findings TEXT NOT NULL,
+    file_url TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Adopted by LGU',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 21. Scheduled Social Media Posts (SMMS)
+CREATE TABLE IF NOT EXISTS scheduled_posts (
+    id TEXT PRIMARY KEY,
+    platform TEXT NOT NULL,
+    title TEXT NOT NULL,
+    scheduled_time TEXT NOT NULL,
+    campaign_tag TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Scheduled',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
@@ -356,33 +427,109 @@ ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marketing_campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tiac_assistance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lost_and_found_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE financial_monitoring ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tourism_policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tourism_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tourism_research ENABLE ROW LEVEL SECURITY;
+ALTER TABLE scheduled_posts ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to directories (for visitor portal)
+DROP POLICY IF EXISTS "Public destinations read access" ON tourism_destinations;
 CREATE POLICY "Public destinations read access" ON tourism_destinations FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public establishments read access" ON tourism_establishments;
 CREATE POLICY "Public establishments read access" ON tourism_establishments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public events read access" ON tourism_events;
 CREATE POLICY "Public events read access" ON tourism_events FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public msme read access" ON msme_tourism;
 CREATE POLICY "Public msme read access" ON msme_tourism FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public campaigns read access" ON marketing_campaigns;
 CREATE POLICY "Public campaigns read access" ON marketing_campaigns FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public tiac_logs read access" ON tiac_assistance_logs;
 CREATE POLICY "Public tiac_logs read access" ON tiac_assistance_logs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public lost_found read access" ON lost_and_found_items;
 CREATE POLICY "Public lost_found read access" ON lost_and_found_items FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Public policies read access" ON tourism_policies;
+CREATE POLICY "Public policies read access" ON tourism_policies FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public products read access" ON tourism_products;
+CREATE POLICY "Public products read access" ON tourism_products FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public research read access" ON tourism_research;
+CREATE POLICY "Public research read access" ON tourism_research FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public posts read access" ON scheduled_posts;
+CREATE POLICY "Public posts read access" ON scheduled_posts FOR SELECT USING (true);
+
 -- Allow authenticated or anon access with API key for full CRUD
+DROP POLICY IF EXISTS "Full access to tourist_arrivals" ON tourist_arrivals;
 CREATE POLICY "Full access to tourist_arrivals" ON tourist_arrivals FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourism_establishments" ON tourism_establishments;
 CREATE POLICY "Full access to tourism_establishments" ON tourism_establishments FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to msme_tourism" ON msme_tourism;
 CREATE POLICY "Full access to msme_tourism" ON msme_tourism FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourism_destinations" ON tourism_destinations;
 CREATE POLICY "Full access to tourism_destinations" ON tourism_destinations FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourism_events" ON tourism_events;
 CREATE POLICY "Full access to tourism_events" ON tourism_events FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to employees" ON employees;
 CREATE POLICY "Full access to employees" ON employees FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to office_inventory" ON office_inventory;
 CREATE POLICY "Full access to office_inventory" ON office_inventory FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to notices_of_violation" ON notices_of_violation;
 CREATE POLICY "Full access to notices_of_violation" ON notices_of_violation FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourist_complaints" ON tourist_complaints;
 CREATE POLICY "Full access to tourist_complaints" ON tourist_complaints FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourist_feedback" ON tourist_feedback;
 CREATE POLICY "Full access to tourist_feedback" ON tourist_feedback FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to official_documents" ON official_documents;
 CREATE POLICY "Full access to official_documents" ON official_documents FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to audit_logs" ON audit_logs;
 CREATE POLICY "Full access to audit_logs" ON audit_logs FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to user_profiles" ON user_profiles;
 CREATE POLICY "Full access to user_profiles" ON user_profiles FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to marketing_campaigns" ON marketing_campaigns;
 CREATE POLICY "Full access to marketing_campaigns" ON marketing_campaigns FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tiac_assistance_logs" ON tiac_assistance_logs;
 CREATE POLICY "Full access to tiac_assistance_logs" ON tiac_assistance_logs FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to lost_and_found_items" ON lost_and_found_items;
 CREATE POLICY "Full access to lost_and_found_items" ON lost_and_found_items FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to financial_monitoring" ON financial_monitoring;
+CREATE POLICY "Full access to financial_monitoring" ON financial_monitoring FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourism_policies" ON tourism_policies;
+CREATE POLICY "Full access to tourism_policies" ON tourism_policies FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourism_products" ON tourism_products;
+CREATE POLICY "Full access to tourism_products" ON tourism_products FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to tourism_research" ON tourism_research;
+CREATE POLICY "Full access to tourism_research" ON tourism_research FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Full access to scheduled_posts" ON scheduled_posts;
+CREATE POLICY "Full access to scheduled_posts" ON scheduled_posts FOR ALL USING (true);
 
 -- ==============================================================================
 -- 12. SUPABASE OBJECT STORAGE (Buckets & Policies for Photos and Media)
@@ -394,22 +541,25 @@ VALUES ('tourism-media', 'tourism-media', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Allow public read access to all images in 'tourism-media'
+DROP POLICY IF EXISTS "Public Read Access for tourism-media" ON storage.objects;
 CREATE POLICY "Public Read Access for tourism-media"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'tourism-media');
 
 -- Allow inserts (uploads) to 'tourism-media'
+DROP POLICY IF EXISTS "Allow Uploads to tourism-media" ON storage.objects;
 CREATE POLICY "Allow Uploads to tourism-media"
 ON storage.objects FOR INSERT
 WITH CHECK (bucket_id = 'tourism-media');
 
 -- Allow updates / replaces in 'tourism-media'
+DROP POLICY IF EXISTS "Allow Updates to tourism-media" ON storage.objects;
 CREATE POLICY "Allow Updates to tourism-media"
 ON storage.objects FOR UPDATE
 USING (bucket_id = 'tourism-media');
 
 -- Allow deletions in 'tourism-media'
+DROP POLICY IF EXISTS "Allow Deletes in tourism-media" ON storage.objects;
 CREATE POLICY "Allow Deletes in tourism-media"
 ON storage.objects FOR DELETE
 USING (bucket_id = 'tourism-media');
-

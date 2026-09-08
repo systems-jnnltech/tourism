@@ -14,7 +14,8 @@ import {
   Edit2,
   Printer,
   FileCheck,
-  FileWarning
+  FileWarning,
+  Trash2,
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { NoticeOfViolation, TouristComplaint } from '../../types';
@@ -23,7 +24,7 @@ import { AddNoticeModal } from '../common/AddNoticeModal';
 import { GrievanceResolutionModal } from '../common/GrievanceResolutionModal';
 
 export const PolicyRegulationView: React.FC = () => {
-  const { notices, resolveNotice, complaints, updateComplaintStatus, policies, isReadOnly } = useTourism();
+  const { notices, resolveNotice, complaints, updateComplaintStatus, policies, deletePolicy, isReadOnly } = useTourism();
 
   const [activeTab, setActiveTab] = useState<'ordinances' | 'notices' | 'complaints'>('notices');
   const [addNoticeModalOpen, setAddNoticeModalOpen] = useState(false);
@@ -58,6 +59,12 @@ export const PolicyRegulationView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Tourism Code enforcement, Notices of Violation (NOV), standards inspection, and visitor dispute resolution.
           </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+              Cloud Synced (Tables #8, #9, #18)
+            </span>
+          </div>
         </div>
 
         {/* Tab Controls */}
@@ -345,7 +352,22 @@ export const PolicyRegulationView: React.FC = () => {
                 <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                   {p.referenceNumber}
                 </span>
-                <span className="text-[11px] text-slate-400">{p.dateApproved}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-400">{p.dateApproved}</span>
+                  {!isReadOnly && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete policy ordinance record "${p.referenceNumber}"?`)) {
+                          deletePolicy(p.id);
+                        }
+                      }}
+                      className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition-colors"
+                      title="Delete Policy"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
               <h3 className="font-bold text-slate-900 text-sm">{p.title}</h3>
               <p className="text-xs text-slate-600 mt-2">{p.summary}</p>

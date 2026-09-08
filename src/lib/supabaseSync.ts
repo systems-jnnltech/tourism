@@ -16,6 +16,11 @@ import {
   MarketingCampaign,
   VisitorAssistanceLog,
   LostAndFoundItem,
+  FinancialMonitoringRecord,
+  TourismPolicy,
+  TourismProduct,
+  TourismResearch,
+  ScheduledPost,
 } from '../types';
 
 // Utility to convert camelCase object keys to snake_case for PostgreSQL

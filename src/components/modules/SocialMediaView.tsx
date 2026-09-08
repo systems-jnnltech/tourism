@@ -13,14 +13,21 @@ import {
   Clock,
   Sparkles,
   Plus,
-  Filter
+  Filter,
+  Trash2,
+  Edit2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
+import { SocialMediaPlatformStat } from '../../types';
 import { AddPostModal } from '../common/AddPostModal';
+import { EditChannelMetricsModal } from '../common/EditChannelMetricsModal';
 
 export const SocialMediaView: React.FC = () => {
-  const { socialMetrics, scheduledPosts } = useTourism();
+  const { socialMetrics, scheduledPosts, deleteScheduledPost, isReadOnly } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditMetricModalOpen, setIsEditMetricModalOpen] = useState(false);
+  const [selectedMetricPlatform, setSelectedMetricPlatform] = useState<SocialMediaPlatformStat['platform']>('Facebook');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('All');
 
   const totalFollowers = socialMetrics.reduce((sum, s) => sum + s.followers, 0);
@@ -45,12 +52,33 @@ export const SocialMediaView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Omnichannel audience engagement tracking across official LGU Malungon Tourism social media channels.
           </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
+              Cloud Synced (Table #21)
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline-block px-3 py-1.5 bg-pink-50 border border-pink-200 text-pink-800 text-xs font-semibold rounded-lg">
             Total Reach: {totalReach.toLocaleString()}
           </span>
+          {!isReadOnly && (
+            <button
+              id="open-edit-metrics-btn"
+              type="button"
+              onClick={() => {
+                setSelectedMetricPlatform('Facebook');
+                setIsEditMetricModalOpen(true);
+              }}
+              className="px-3 py-2 bg-white hover:bg-pink-50 text-pink-700 border border-pink-200 rounded-xl text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors"
+              title="Manually enter or update monthly channel metrics"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Update Metrics</span>
+            </button>
+          )}
           <button
             id="open-add-post-btn"
             type="button"
@@ -89,14 +117,29 @@ export const SocialMediaView: React.FC = () => {
         {socialMetrics.map((platform, idx) => (
           <div
             key={idx}
-            className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between hover:border-pink-300 transition-all"
+            className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between hover:border-pink-300 transition-all group"
           >
             <div>
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900 text-base">{platform.platform}</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
-                  Official Page
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                    Official Page
+                  </span>
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedMetricPlatform(platform.platform);
+                        setIsEditMetricModalOpen(true);
+                      }}
+                      className="p-1 text-slate-400 hover:text-pink-700 hover:bg-pink-50 rounded-md transition-colors"
+                      title={`Edit ${platform.platform} metrics`}
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 space-y-2 text-xs">
@@ -120,9 +163,23 @@ export const SocialMediaView: React.FC = () => {
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100 text-xs">
-              <span className="text-[10px] text-slate-400 block font-bold uppercase">Top Performing Post:</span>
-              <div className="font-medium text-slate-900 line-clamp-1 mt-0.5">{platform.topPostTitle}</div>
-              <div className="text-[11px] text-pink-700 font-semibold mt-0.5">{platform.topPostEngagement}</div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 block font-bold uppercase">Top Performing Post:</span>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMetricPlatform(platform.platform);
+                      setIsEditMetricModalOpen(true);
+                    }}
+                    className="text-[10px] text-pink-700 hover:text-pink-900 font-semibold"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              <div className="font-medium text-slate-900 line-clamp-1 mt-0.5">{platform.topPostTitle || 'No post specified'}</div>
+              <div className="text-[11px] text-pink-700 font-semibold mt-0.5">{platform.topPostEngagement || '—'}</div>
             </div>
           </div>
         ))}
@@ -170,6 +227,7 @@ export const SocialMediaView: React.FC = () => {
                 <th className="px-4 py-3">Publish Schedule</th>
                 <th className="px-4 py-3">Campaign Tag</th>
                 <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -196,6 +254,21 @@ export const SocialMediaView: React.FC = () => {
                       {post.status}
                     </span>
                   </td>
+                  <td className="px-3 py-3 text-right">
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Delete scheduled post "${post.title}"?`)) {
+                            deleteScheduledPost(post.id);
+                          }
+                        }}
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                        title="Delete Post"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -207,6 +280,13 @@ export const SocialMediaView: React.FC = () => {
       <AddPostModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+      />
+
+      {/* Edit Channel Metrics Modal */}
+      <EditChannelMetricsModal
+        isOpen={isEditMetricModalOpen}
+        onClose={() => setIsEditMetricModalOpen(false)}
+        targetPlatform={selectedMetricPlatform}
       />
     </div>
   );

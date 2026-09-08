@@ -14,7 +14,8 @@ import {
   Plus,
   Calculator,
   Gauge,
-  Info
+  Info,
+  Trash2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -30,7 +31,7 @@ import { useTourism } from '../../context/TourismContext';
 import { AddResearchModal } from '../common/AddResearchModal';
 
 export const ResearchPlanningView: React.FC = () => {
-  const { research, destinations } = useTourism();
+  const { research, deleteResearch, destinations, isReadOnly } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Interactive Carrying Capacity Simulator State
@@ -107,6 +108,12 @@ export const ResearchPlanningView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Empirical surveys, carrying capacity computations, economic impact multipliers, and MTDP 2024–2030 roadmap.
           </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+              Cloud Synced (Table #20)
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -456,6 +463,7 @@ export const ResearchPlanningView: React.FC = () => {
                 <th className="px-4 py-3">Key Empirical Findings</th>
                 <th className="px-3 py-3">Year</th>
                 <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -474,6 +482,21 @@ export const ResearchPlanningView: React.FC = () => {
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
                       {study.status}
                     </span>
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Delete research study "${study.title}"?`)) {
+                            deleteResearch(study.id);
+                          }
+                        }}
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                        title="Delete Study"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

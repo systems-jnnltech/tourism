@@ -2,18 +2,8 @@ import React, { useState } from 'react';
 import {
   Sparkles,
   Route,
-  Compass,
   CheckCircle2,
-  Clock,
-  Layers,
-  MapPin,
-  TrendingUp,
-  Award,
-  Users,
-  Coins,
   Plus,
-  Calculator,
-  ShieldCheck,
   Trash2,
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
@@ -23,50 +13,14 @@ export const ProductDevelopmentView: React.FC = () => {
   const { products, deleteProduct, isReadOnly } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Circuit Cost & Revenue Share Estimator State
-  const [selectedCircuitIndex, setSelectedCircuitIndex] = useState(0);
-  const [guestCount, setGuestCount] = useState(10);
-  const [includeGuide, setIncludeGuide] = useState(true);
-  const [includeWorkshop, setIncludeWorkshop] = useState(true);
-  const [includeTraditionalLunch, setIncludeTraditionalLunch] = useState(true);
-
-  // Curated Tourism Circuits
-  const circuits = [
-    {
-      name: 'Highland Ridge & Glamping Corridor',
-      duration: '2 Days / 1 Night',
-      stops: ['Kalon Barak Ridge', 'Pine Mountain Overlook', 'Highland Coffee Farm'],
-      targetAudience: 'Eco-Tourists, Campers, Motorcyclists',
-      baseFeePerPax: 450,
-      status: 'Fully Commercialized & Active',
-    },
-    {
-      name: 'Living Ancestral Weaving & Heritage Trail',
-      duration: 'Whole Day Tour',
-      stops: ['Lamlifew Village Museum', 'School of Living Traditions', 'Artisan Weaving Sheds'],
-      targetAudience: 'Cultural Enthusiasts, Educational Groups, Photographers',
-      baseFeePerPax: 350,
-      status: 'Community-Based Tourism (CBT) Standard Certified',
-    },
-    {
-      name: 'Eco-Spring & River Cascade Adventure',
-      duration: 'Half Day Tour',
-      stops: ['Villamor Cold Spring', 'Upper Mainit Watershed', 'Riverside Picnic Grounds'],
-      targetAudience: 'Families, Domestic Vacationers, Youth Groups',
-      baseFeePerPax: 250,
-      status: 'Operational & Regulated Capacity',
-    },
-  ];
-
-  const currentCircuit = circuits[selectedCircuitIndex] || circuits[0];
-  const guideFee = includeGuide ? 1000 : 0;
-  const workshopFee = includeWorkshop ? 250 * guestCount : 0;
-  const lunchFee = includeTraditionalLunch ? 300 * guestCount : 0;
-  const environmentalFee = 50 * guestCount;
-  const baseTotal = currentCircuit.baseFeePerPax * guestCount;
-  const grandTotal = baseTotal + guideFee + workshopFee + lunchFee + environmentalFee;
-  const communityShare = Math.round(grandTotal * 0.75); // 75% retained directly by local community guides/weavers/caterers
-  const lguShare = grandTotal - communityShare; // 25% trust fund for trail maintenance and security
+  const marketReadyCount = products.filter(
+    (p) => p.stage === 'Market-Ready' || p.stage === 'Established'
+  ).length;
+  const totalInvestment = products.reduce((sum, p) => sum + (p.investmentRequired || 0), 0);
+  const avgScore =
+    products.length > 0
+      ? Math.round(products.reduce((sum, p) => sum + (p.evaluationScore || 0), 0) / products.length)
+      : 0;
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
@@ -91,7 +45,7 @@ export const ProductDevelopmentView: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline-block px-3 py-1.5 bg-purple-50 border border-purple-200 text-purple-800 text-xs font-semibold rounded-lg">
-            3 Active Commercial Circuits
+            {products.length} {products.length === 1 ? 'Registered Product / Circuit' : 'Registered Products / Circuits'}
           </span>
           <button
             id="open-add-product-btn"
@@ -105,212 +59,30 @@ export const ProductDevelopmentView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tourism Circuits Section */}
-      <div>
-        <h3 className="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
-          <Route className="w-4 h-4 text-purple-600" />
-          <span>Packaged Municipal Tourism Circuits</span>
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {circuits.map((c, i) => (
-            <div
-              key={i}
-              onClick={() => setSelectedCircuitIndex(i)}
-              className={`bg-white p-5 rounded-xl border transition-all flex flex-col justify-between cursor-pointer ${
-                selectedCircuitIndex === i
-                  ? 'border-purple-600 ring-2 ring-purple-100 shadow-md'
-                  : 'border-slate-200 shadow-xs hover:border-purple-300'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
-                    {c.duration}
-                  </span>
-                  <span className="text-xs font-bold text-slate-900 font-mono">
-                    ₱{c.baseFeePerPax}/pax
-                  </span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-base mt-2">{c.name}</h4>
-
-                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
-                  <div className="font-semibold text-slate-800">Itinerary Stops:</div>
-                  <ul className="list-disc list-inside space-y-0.5 text-slate-600 pl-1">
-                    {c.stops.map((stop, sIdx) => (
-                      <li key={sIdx}>{stop}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-3 text-xs text-slate-500">
-                  <span>Target: <strong>{c.targetAudience}</strong></span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-emerald-700 font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{c.status}</span>
-                </span>
-                <span className="text-[11px] font-bold text-purple-700">
-                  {selectedCircuitIndex === i ? 'Selected Circuit' : 'Click to Quote'}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Interactive Circuit Revenue & Booking Calculator */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="p-1.5 bg-purple-100 text-purple-800 rounded-lg">
-                <Calculator className="w-4 h-4" />
-              </span>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-                Circuit Package Cost & Community Beneficiary Split Estimator
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Simulate travel agency group rates and direct community livelihood distribution ({currentCircuit.name})
-            </p>
-          </div>
+      {/* Live Pipeline KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pipeline Products</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">{products.length}</div>
+          <div className="text-[11px] text-purple-700 font-medium mt-1">Active Innovation Concepts</div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Options */}
-          <div className="lg:col-span-2 space-y-4 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
-                  Group / Tour Delegation Size (pax)
-                </label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    id="guest-count-slider"
-                    type="range"
-                    min="2"
-                    max="50"
-                    step="1"
-                    value={guestCount}
-                    onChange={(e) => setGuestCount(Number(e.target.value))}
-                    className="w-full accent-purple-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
-                  />
-                  <span className="font-mono font-bold text-sm text-purple-900 w-12 text-right">
-                    {guestCount} pax
-                  </span>
-                </div>
-              </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Market-Ready / Active</span>
+          <div className="text-2xl font-black text-emerald-800 mt-1">{marketReadyCount}</div>
+          <div className="text-[11px] text-emerald-600 font-medium mt-1">Ready for Commercialization</div>
+        </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
-                  Active Circuit Target
-                </label>
-                <select
-                  id="circuit-select-dropdown"
-                  value={selectedCircuitIndex}
-                  onChange={(e) => setSelectedCircuitIndex(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-slate-900 font-medium"
-                >
-                  {circuits.map((c, idx) => (
-                    <option key={idx} value={idx}>
-                      {c.name} (₱{c.baseFeePerPax}/pax)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Investment Pipeline</span>
+          <div className="text-2xl font-black text-slate-900 font-mono mt-1">₱{totalInvestment.toLocaleString()}</div>
+          <div className="text-[11px] text-slate-500 mt-1">Capital Required</div>
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <label className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeGuide}
-                  onChange={(e) => setIncludeGuide(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500 mt-0.5"
-                />
-                <div>
-                  <div className="font-bold text-slate-800">DOT Tour Guide</div>
-                  <div className="text-[11px] text-slate-500">+₱1,000 / group lead</div>
-                </div>
-              </label>
-
-              <label className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeWorkshop}
-                  onChange={(e) => setIncludeWorkshop(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500 mt-0.5"
-                />
-                <div>
-                  <div className="font-bold text-slate-800">Weaving / Coffee Demo</div>
-                  <div className="text-[11px] text-slate-500">+₱250 / pax hands-on</div>
-                </div>
-              </label>
-
-              <label className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeTraditionalLunch}
-                  onChange={(e) => setIncludeTraditionalLunch(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500 mt-0.5"
-                />
-                <div>
-                  <div className="font-bold text-slate-800">CBT Native Buffet</div>
-                  <div className="text-[11px] text-slate-500">+₱300 / pax highland meal</div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Revenue Split Card */}
-          <div className="p-4 bg-purple-950 text-white rounded-xl flex flex-col justify-between space-y-3">
-            <div>
-              <div className="text-[10px] uppercase font-bold text-purple-300 tracking-wider flex items-center justify-between">
-                <span>Quotation Breakdown</span>
-                <span className="font-mono text-purple-200">{guestCount} Visitors</span>
-              </div>
-
-              <div className="mt-3 space-y-1.5 text-xs text-purple-200">
-                <div className="flex justify-between border-b border-purple-800/50 pb-1">
-                  <span>Base Package Entry:</span>
-                  <span className="font-mono text-white">₱{baseTotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between border-b border-purple-800/50 pb-1">
-                  <span>LGU Ecological Conservation:</span>
-                  <span className="font-mono text-white">₱{environmentalFee.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between border-b border-purple-800/50 pb-1">
-                  <span>Add-ons (Meals/Demo/Guide):</span>
-                  <span className="font-mono text-white">₱{(guideFee + workshopFee + lunchFee).toLocaleString()}</span>
-                </div>
-
-                <div className="pt-2">
-                  <div className="text-[11px] text-purple-300">Total Group Package Cost:</div>
-                  <div className="text-2xl font-extrabold text-white font-mono">
-                    ₱{grandTotal.toLocaleString()}
-                  </div>
-                  <div className="text-[11px] text-purple-300 font-mono mt-0.5">
-                    (₱{Math.round(grandTotal / guestCount).toLocaleString()} / visitor)
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-purple-800/80 text-[11px] space-y-1">
-              <div className="flex justify-between text-emerald-300 font-bold">
-                <span>Community Host Share (75%):</span>
-                <span className="font-mono">₱{communityShare.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-purple-300">
-                <span>LGU Regulatory Fund (25%):</span>
-                <span className="font-mono">₱{lguShare.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Avg Readiness Score</span>
+          <div className="text-2xl font-black text-purple-900 mt-1">{avgScore}%</div>
+          <div className="text-[11px] text-purple-700 font-medium mt-1">CBT Standards Index</div>
         </div>
       </div>
 
@@ -348,14 +120,37 @@ export const ProductDevelopmentView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {products.map((prod) => (
-                <tr key={prod.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-slate-900">{prod.productName}</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">
-                      Target: {prod.targetMarket} • Stakeholders: {prod.communityStakeholders}
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
+                    <div className="max-w-sm mx-auto space-y-2">
+                      <Route className="w-8 h-8 mx-auto text-slate-300 stroke-1" />
+                      <p className="font-semibold text-slate-700 text-sm">No Products or Circuits Registered Yet</p>
+                      <p className="text-xs text-slate-400">
+                        Package a new municipal tourism circuit or CBT product to begin tracking its readiness and investment pipeline.
+                      </p>
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddModalOpen(true)}
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Package First Product</span>
+                        </button>
+                      )}
                     </div>
                   </td>
+                </tr>
+              ) : (
+                products.map((prod) => (
+                  <tr key={prod.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900">{prod.productName}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        Target: {prod.targetMarket} • Stakeholders: {prod.communityStakeholders}
+                      </div>
+                    </td>
 
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold">
@@ -412,8 +207,9 @@ export const ProductDevelopmentView: React.FC = () => {
                     )}
                   </td>
                 </tr>
-              ))}
-            </tbody>
+              ))
+            )}
+          </tbody>
           </table>
         </div>
       </div>

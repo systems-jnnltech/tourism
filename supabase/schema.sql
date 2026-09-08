@@ -277,6 +277,22 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     details TEXT NOT NULL
 );
 
+-- 13. User Profiles & RBAC Directory Table
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL DEFAULT 'Guest/User',
+    department TEXT NOT NULL DEFAULT 'Municipal Tourism Office',
+    avatar TEXT,
+    status TEXT NOT NULL DEFAULT 'Pending Approval',
+    requested_role TEXT,
+    password TEXT NOT NULL DEFAULT 'Malungon2026!',
+    approved_by TEXT,
+    approved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
@@ -292,6 +308,7 @@ ALTER TABLE tourist_complaints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tourist_feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE official_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to directories (for visitor portal)
 CREATE POLICY "Public destinations read access" ON tourism_destinations FOR SELECT USING (true);
@@ -312,6 +329,7 @@ CREATE POLICY "Full access to tourist_complaints" ON tourist_complaints FOR ALL 
 CREATE POLICY "Full access to tourist_feedback" ON tourist_feedback FOR ALL USING (true);
 CREATE POLICY "Full access to official_documents" ON official_documents FOR ALL USING (true);
 CREATE POLICY "Full access to audit_logs" ON audit_logs FOR ALL USING (true);
+CREATE POLICY "Full access to user_profiles" ON user_profiles FOR ALL USING (true);
 
 -- ==============================================================================
 -- 12. SUPABASE OBJECT STORAGE (Buckets & Policies for Photos and Media)

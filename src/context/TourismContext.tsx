@@ -712,6 +712,20 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } else if (remoteLogs && remoteLogs.length === 0) {
         await seedTableIfEmpty('audit_logs', INITIAL_AUDIT_LOGS);
       }
+
+      // 13. User Profiles & Staff Directory
+      const remoteUsers = await fetchTableData<UserProfile>('user_profiles');
+      if (remoteUsers && remoteUsers.length > 0) {
+        const mergedUsers = [...remoteUsers];
+        for (const initUser of INITIAL_USERS) {
+          if (!mergedUsers.some((u) => u.email.toLowerCase() === initUser.email.toLowerCase())) {
+            mergedUsers.unshift(initUser);
+          }
+        }
+        setUsers(mergedUsers);
+      } else if (remoteUsers && remoteUsers.length === 0) {
+        await seedTableIfEmpty('user_profiles', INITIAL_USERS);
+      }
     } catch (err) {
       console.warn('[Supabase Sync] Exception during sync cycle:', err);
     } finally {
@@ -762,7 +776,7 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const cleanPass = password.trim();
 
     // Look for user by email, id, or case-insensitive name / username
-    const found = users.find(
+    let found = users.find(
       (u) =>
         u.email.toLowerCase() === cleanId ||
         u.id.toLowerCase() === cleanId ||
@@ -772,6 +786,31 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         u.role.toLowerCase().replace(/\s+/g, '_') === cleanId ||
         u.role.toLowerCase() === cleanId
     );
+
+    // If not found in local cache or currently pending, check Supabase for live cross-device updates
+    if ((!found || found.status === 'Pending Approval') && isSupabaseConfigured) {
+      try {
+        const freshUsers = await fetchTableData<UserProfile>('user_profiles');
+        if (freshUsers && freshUsers.length > 0) {
+          setUsers(freshUsers);
+          const liveMatch = freshUsers.find(
+            (u) =>
+              u.email.toLowerCase() === cleanId ||
+              u.id.toLowerCase() === cleanId ||
+              u.name.toLowerCase() === cleanId ||
+              (cleanId === 'admin' && u.role === 'System Administrator') ||
+              (cleanId === 'systems' && u.email.toLowerCase() === 'systems@malungon.gov.ph') ||
+              u.role.toLowerCase().replace(/\s+/g, '_') === cleanId ||
+              u.role.toLowerCase() === cleanId
+          );
+          if (liveMatch) {
+            found = liveMatch;
+          }
+        }
+      } catch (err) {
+        console.warn('[Supabase Sync] Live user lookup error:', err);
+      }
+    }
 
     if (!found) {
       return {
@@ -864,6 +903,12 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setUsers((prev) => [...prev, newUser]);
 
+    if (isSupabaseConfigured) {
+      insertTableRow('user_profiles', newUser).catch((err) => {
+        console.warn('[Supabase Sync] insert user_profiles failed:', err);
+      });
+    }
+
     if (isStaff) {
       addAuditLog(
         'CREATE',
@@ -895,21 +940,30 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // User Management: Approve pending staff registration
   const approveUser = (userId: string, assignedRole?: UserRole) => {
+    let approvedUserRecord: UserProfile | undefined;
     setUsers((prev) =>
       prev.map((u) => {
         if (u.id === userId) {
           const targetRole = assignedRole || u.requestedRole || u.role;
-          return {
+          approvedUserRecord = {
             ...u,
             status: 'Active',
             role: targetRole,
             approvedBy: currentUser?.name || 'System Administrator',
-            approvedAt: new Date().toISOString().split('T')[0],
+            approvedAt: new Date().toISOString(),
           };
+          return approvedUserRecord;
         }
         return u;
       })
     );
+
+    if (approvedUserRecord && isSupabaseConfigured) {
+      updateTableRow('user_profiles', userId, approvedUserRecord).catch((err) => {
+        console.warn('[Supabase Sync] update user_profiles approval failed:', err);
+      });
+    }
+
     const target = users.find((u) => u.id === userId);
     addAuditLog(
       'UPDATE',
@@ -920,9 +974,28 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // User Management: Decline / Reject account application
   const rejectUser = (userId: string, reason?: string) => {
+    let rejectedRecord: UserProfile | undefined;
     setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: 'Rejected' } : u))
+      prev.map((u) => {
+        if (u.id === userId) {
+          rejectedRecord = {
+            ...u,
+            status: 'Rejected',
+            approvedBy: currentUser?.name || 'System Administrator',
+            approvedAt: new Date().toISOString(),
+          };
+          return rejectedRecord;
+        }
+        return u;
+      })
     );
+
+    if (rejectedRecord && isSupabaseConfigured) {
+      updateTableRow('user_profiles', userId, rejectedRecord).catch((err) => {
+        console.warn('[Supabase Sync] update user_profiles rejection failed:', err);
+      });
+    }
+
     const target = users.find((u) => u.id === userId);
     addAuditLog(
       'UPDATE',

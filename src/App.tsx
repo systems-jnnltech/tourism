@@ -7,6 +7,8 @@ import { BackupRestoreModal } from './components/common/BackupRestoreModal';
 import { NotificationModal } from './components/common/NotificationModal';
 import { GISMapModal } from './components/common/GISMapModal';
 import { WorkflowManualModal } from './components/common/WorkflowManualModal';
+import { UserManagementModal } from './components/common/UserManagementModal';
+import { AuthPage } from './components/auth/AuthPage';
 
 // 15 System Module Views
 import { DashboardView } from './components/modules/DashboardView';
@@ -30,7 +32,7 @@ import { ShieldAlert, Lock, RefreshCw } from 'lucide-react';
 import { ModuleKey } from './types';
 
 const MainLayout: React.FC = () => {
-  const { currentModule, setCurrentModule, currentUser, canAccess, municipalityInfo } = useTourism();
+  const { currentModule, setCurrentModule, currentUser, canAccess, municipalityInfo, isAuthenticated } = useTourism();
 
   // Global modals
   const [auditModalOpen, setAuditModalOpen] = useState(false);
@@ -38,8 +40,14 @@ const MainLayout: React.FC = () => {
   const [notificationModalOpen, setNotificationModalOpen] = useState(false);
   const [gisModalOpen, setGisModalOpen] = useState(false);
   const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [userMgmtModalOpen, setUserMgmtModalOpen] = useState(false);
   const [selectedGisDestId, setSelectedGisDestId] = useState<string | undefined>(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // If not authenticated, present the official AuthPage gateway
+  if (!isAuthenticated) {
+    return <AuthPage />;
+  }
 
   const handleOpenGIS = (destId?: string) => {
     setSelectedGisDestId(destId);
@@ -125,6 +133,7 @@ const MainLayout: React.FC = () => {
         onOpenNotify={() => setNotificationModalOpen(true)}
         onOpenGIS={() => setGisModalOpen(true)}
         onOpenManual={() => setManualModalOpen(true)}
+        onOpenUserManagement={() => setUserMgmtModalOpen(true)}
         onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
         mobileMenuOpen={mobileMenuOpen}
       />
@@ -168,6 +177,10 @@ const MainLayout: React.FC = () => {
       <WorkflowManualModal
         isOpen={manualModalOpen}
         onClose={() => setManualModalOpen(false)}
+      />
+      <UserManagementModal
+        isOpen={userMgmtModalOpen}
+        onClose={() => setUserMgmtModalOpen(false)}
       />
     </div>
   );

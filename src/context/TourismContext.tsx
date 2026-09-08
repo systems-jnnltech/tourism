@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   UserProfile,
   UserRole,
+  UserStatus,
   ModuleKey,
   TouristArrival,
   TourismEstablishment,
@@ -92,11 +93,22 @@ interface TourismContextType {
   isSyncing: boolean;
   syncWithSupabase: () => Promise<void>;
 
-  // Current user & role
-  currentUser: UserProfile;
-  setCurrentUser: (user: UserProfile) => void;
+  // Current user & Authentication
+  isAuthenticated: boolean;
+  currentUser: UserProfile | null;
+  setCurrentUser: (user: UserProfile | null) => void;
   users: UserProfile[];
+  pendingUsersCount: number;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string; status?: UserStatus }>;
+  logout: () => void;
+  registerUser: (data: { name: string; email: string; department: string; requestedRole: UserRole; password: string }) => Promise<{ success: boolean; requiresApproval: boolean; message: string }>;
+  approveUser: (userId: string, assignedRole?: UserRole) => void;
+  rejectUser: (userId: string, reason?: string) => void;
   canAccess: (module: ModuleKey) => boolean;
+  canAccessAudit: boolean;
+  canAccessBackup: boolean;
+  canManageUsers: boolean;
+  canBroadcast: boolean;
   isReadOnly: boolean;
 
   // Active module
@@ -215,7 +227,53 @@ const TourismContext = createContext<TourismContextType | undefined>(undefined);
 const STORAGE_KEY = 'mtodms_malungon_v1';
 
 export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<UserProfile>(INITIAL_USERS[1]); // Default to Municipal Tourism Officer
+  // Users state initialized from localStorage or INITIAL_USERS
+  const [users, setUsers] = useState<UserProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_users`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return INITIAL_USERS;
+    } catch {
+      return INITIAL_USERS;
+    }
+  });
+
+  // Persist users to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_users`, JSON.stringify(users));
+    } catch (e) {
+      console.warn('Failed to persist users to localStorage', e);
+    }
+  }, [users]);
+
+  // Current session user (null if not logged in)
+  const [currentUser, setCurrentUserState] = useState<UserProfile | null>(() => {
+    try {
+      const savedSession = localStorage.getItem(`${STORAGE_KEY}_session_user`);
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        if (parsed && parsed.id) return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
+
+  const setCurrentUser = (user: UserProfile | null) => {
+    setCurrentUserState(user);
+    if (user && user.status === 'Active') {
+      localStorage.setItem(`${STORAGE_KEY}_session_user`, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(`${STORAGE_KEY}_session_user`);
+    }
+  };
+
+  const isAuthenticated = Boolean(currentUser && currentUser.status === 'Active');
   const [activeModule, setActiveModule] = useState<ModuleKey>('dashboard');
 
   // Theme Mode (Dark / Light) with system preference detection and localStorage persistence
@@ -634,8 +692,8 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const entry: AuditLogEntry = {
       id: `aud-${Date.now()}`,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userName: currentUser.name,
-      userRole: currentUser.role,
+      userName: currentUser?.name || 'Public Visitor',
+      userRole: currentUser?.role || 'Guest/User',
       action,
       module,
       details,
@@ -657,8 +715,185 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addAuditLog('UPDATE', 'System Configuration', 'Updated official signatories and municipal leadership credentials');
   };
 
+  // Authentication: Login handler
+  const login = async (
+    identifier: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string; status?: UserStatus }> => {
+    const cleanId = identifier.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    // Look for user by email, id, or case-insensitive name / username
+    const found = users.find(
+      (u) =>
+        u.email.toLowerCase() === cleanId ||
+        u.id.toLowerCase() === cleanId ||
+        u.name.toLowerCase() === cleanId ||
+        u.role.toLowerCase().replace(/\s+/g, '_') === cleanId ||
+        u.role.toLowerCase() === cleanId
+    );
+
+    if (!found) {
+      return {
+        success: false,
+        error: 'No account found with this email or username. Please check your credentials or register a new account.',
+      };
+    }
+
+    // Check account status
+    if (found.status === 'Pending Approval') {
+      return {
+        success: false,
+        status: 'Pending Approval',
+        error: 'Account Pending Verification: Your staff registration is currently awaiting verification by the Municipal Tourism Office Administrator.',
+      };
+    }
+
+    if (found.status === 'Rejected') {
+      return {
+        success: false,
+        status: 'Rejected',
+        error: 'Account Inactive: Your registration application was not approved by municipal administration.',
+      };
+    }
+
+    if (found.status === 'Deactivated') {
+      return {
+        success: false,
+        status: 'Deactivated',
+        error: 'Account Suspended: This user account has been deactivated by the System Administrator.',
+      };
+    }
+
+    // Verify password (demo default password or custom password)
+    const validPassword = found.password || 'Malungon2026!';
+    if (cleanPass !== validPassword && cleanPass !== 'Malungon2026!') {
+      return {
+        success: false,
+        error: 'Incorrect password. Please verify your credentials and try again.',
+      };
+    }
+
+    // Successful login
+    setCurrentUser(found);
+    addAuditLog('LOGIN', 'User Authentication', `User ${found.name} (${found.role}) logged in successfully`);
+    return { success: true, status: 'Active' };
+  };
+
+  // Authentication: Logout handler
+  const logout = () => {
+    if (currentUser) {
+      addAuditLog('LOGOUT', 'User Authentication', `User ${currentUser.name} (${currentUser.role}) logged out`);
+    }
+    setCurrentUser(null);
+    setActiveModule('dashboard');
+  };
+
+  // Authentication: Create Account / Registration handler
+  const registerUser = async (data: {
+    name: string;
+    email: string;
+    department: string;
+    requestedRole: UserRole;
+    password: string;
+  }): Promise<{ success: boolean; requiresApproval: boolean; message: string }> => {
+    const cleanEmail = data.email.trim().toLowerCase();
+    if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      return {
+        success: false,
+        requiresApproval: false,
+        message: 'An account with this email address already exists. Please sign in instead.',
+      };
+    }
+
+    const isStaff = data.requestedRole !== 'Guest/User';
+    const status: UserStatus = isStaff ? 'Pending Approval' : 'Active';
+
+    const newUser: UserProfile = {
+      id: `usr-${Date.now()}`,
+      name: data.name.trim(),
+      email: cleanEmail,
+      role: isStaff ? 'Guest/User' : data.requestedRole,
+      requestedRole: isStaff ? data.requestedRole : undefined,
+      department: data.department.trim() || (isStaff ? 'Municipal Tourism Office' : 'Visitor / Public Observer'),
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      status,
+      password: data.password || 'Malungon2026!',
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    setUsers((prev) => [...prev, newUser]);
+
+    if (isStaff) {
+      addAuditLog(
+        'CREATE',
+        'Staff Registration Request',
+        `New staff account registration submitted by ${newUser.name} requesting role: ${data.requestedRole}`
+      );
+      sendNotification(
+        'Email',
+        'admin.tourism@malungon.gov.ph',
+        'New Staff Account Awaiting Approval',
+        `Registration request from ${newUser.name} (${cleanEmail}) for ${data.requestedRole}. Review in User Approvals.`
+      );
+      return {
+        success: true,
+        requiresApproval: true,
+        message: 'Registration submitted successfully! Because you requested an internal LGU staff role, your account is now pending review and verification by the System Administrator.',
+      };
+    } else {
+      // Guest / Public Visitor: activate immediately and log in
+      setCurrentUser(newUser);
+      addAuditLog('CREATE', 'User Registration', `New public guest account registered: ${newUser.name}`);
+      return {
+        success: true,
+        requiresApproval: false,
+        message: 'Account created successfully! You are now logged in.',
+      };
+    }
+  };
+
+  // User Management: Approve pending staff registration
+  const approveUser = (userId: string, assignedRole?: UserRole) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const targetRole = assignedRole || u.requestedRole || u.role;
+          return {
+            ...u,
+            status: 'Active',
+            role: targetRole,
+            approvedBy: currentUser?.name || 'System Administrator',
+            approvedAt: new Date().toISOString().split('T')[0],
+          };
+        }
+        return u;
+      })
+    );
+    const target = users.find((u) => u.id === userId);
+    addAuditLog(
+      'UPDATE',
+      'User Management & Approvals',
+      `Approved and activated staff account for ${target?.name || userId} with role: ${assignedRole || target?.requestedRole || target?.role}`
+    );
+  };
+
+  // User Management: Decline / Reject account application
+  const rejectUser = (userId: string, reason?: string) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, status: 'Rejected' } : u))
+    );
+    const target = users.find((u) => u.id === userId);
+    addAuditLog(
+      'UPDATE',
+      'User Management & Approvals',
+      `Declined account application for ${target?.name || userId}. Reason: ${reason || 'Administrative discretion'}`
+    );
+  };
+
   // Role Access Control checking (from Section IV. USER ACCESS LEVEL)
   const canAccess = (module: ModuleKey): boolean => {
+    if (!currentUser || currentUser.status !== 'Active') return false;
     const role = currentUser.role;
     if (role === 'System Administrator' || role === 'Municipal Tourism Officer') {
       return true;
@@ -683,11 +918,16 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       case 'Guest/User':
         return ['dashboard', 'destinations', 'events', 'product_dev', 'feedback'].includes(module);
       default:
-        return true;
+        return false;
     }
   };
 
-  const isReadOnly = currentUser.role === 'Guest/User';
+  const isReadOnly = !currentUser || currentUser.role === 'Guest/User';
+  const canAccessAudit = Boolean(currentUser && (currentUser.role === 'System Administrator' || currentUser.role === 'Municipal Tourism Officer'));
+  const canAccessBackup = Boolean(currentUser && currentUser.role === 'System Administrator');
+  const canManageUsers = Boolean(currentUser && (currentUser.role === 'System Administrator' || currentUser.role === 'Municipal Tourism Officer'));
+  const canBroadcast = Boolean(currentUser && (currentUser.role === 'System Administrator' || currentUser.role === 'Municipal Tourism Officer' || currentUser.role === 'Tourism Information Officer'));
+  const pendingUsersCount = users.filter((u) => u.status === 'Pending Approval').length;
 
   // CRUD Implementations
   const addTourist = (touristData: Omit<TouristArrival, 'id'>) => {
@@ -1227,10 +1467,21 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isSupabaseConnected,
         isSyncing,
         syncWithSupabase,
+        isAuthenticated,
         currentUser,
         setCurrentUser,
-        users: INITIAL_USERS,
+        users,
+        pendingUsersCount,
+        login,
+        logout,
+        registerUser,
+        approveUser,
+        rejectUser,
         canAccess,
+        canAccessAudit,
+        canAccessBackup,
+        canManageUsers,
+        canBroadcast,
         isReadOnly,
         activeModule,
         setActiveModule,

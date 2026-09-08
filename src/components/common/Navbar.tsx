@@ -17,7 +17,9 @@ import {
   Sun,
   Moon,
   CloudRain,
-  CloudLightning
+  CloudLightning,
+  LogOut,
+  Users
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { UserRole } from '../../types';
@@ -28,6 +30,7 @@ interface NavbarProps {
   onOpenNotify: () => void;
   onOpenGIS: () => void;
   onOpenManual?: () => void;
+  onOpenUserManagement?: () => void;
   onGlobalSearch?: (term: string) => void;
   onToggleMobileMenu?: () => void;
   mobileMenuOpen?: boolean;
@@ -39,11 +42,28 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenNotify,
   onOpenGIS,
   onOpenManual,
+  onOpenUserManagement,
   onGlobalSearch,
   onToggleMobileMenu,
   mobileMenuOpen = false,
 }) => {
-  const { currentUser, setCurrentUser, users, municipalityInfo, notifications, isReadOnly, theme, toggleTheme, weather } = useTourism();
+  const {
+    currentUser,
+    setCurrentUser,
+    users,
+    logout,
+    canManageUsers,
+    canAccessAudit,
+    canAccessBackup,
+    canBroadcast,
+    pendingUsersCount,
+    municipalityInfo,
+    notifications,
+    isReadOnly,
+    theme,
+    toggleTheme,
+    weather,
+  } = useTourism();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -187,40 +207,46 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">GIS Map</span>
           </button>
 
-          {/* SMS & Email Broadcast */}
-          <button
-            onClick={onOpenNotify}
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors relative"
-            title="LGU Broadcast Dispatcher"
-          >
-            <BellRing className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden md:inline">Alerts</span>
-            {notifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
-                {notifications.length}
-              </span>
-            )}
-          </button>
+          {/* SMS & Email Broadcast (Strict RBAC: Authorized Roles only) */}
+          {canBroadcast && (
+            <button
+              onClick={onOpenNotify}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors relative"
+              title="LGU Broadcast Dispatcher"
+            >
+              <BellRing className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden md:inline">Alerts</span>
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+          )}
 
-          {/* Audit Trail */}
-          <button
-            onClick={onOpenAudit}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5"
-            title="System Audit Trail"
-          >
-            <History className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden md:inline">Audit Log</span>
-          </button>
+          {/* Audit Trail (Strict RBAC: Admin & Tourism Officer) */}
+          {canAccessAudit && (
+            <button
+              onClick={onOpenAudit}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5"
+              title="System Audit Trail"
+            >
+              <History className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">Audit Log</span>
+            </button>
+          )}
 
-          {/* Backup & Restore */}
-          <button
-            onClick={onOpenBackup}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5"
-            title="Database Backup & Restore"
-          >
-            <Database className="w-3.5 h-3.5 text-purple-400" />
-            <span className="hidden lg:inline">Backup</span>
-          </button>
+          {/* Backup & Restore (Strict RBAC: Admin only) */}
+          {canAccessBackup && (
+            <button
+              onClick={onOpenBackup}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5"
+              title="Database Backup & Restore"
+            >
+              <Database className="w-3.5 h-3.5 text-purple-400" />
+              <span className="hidden lg:inline">Backup</span>
+            </button>
+          )}
 
           {/* Workflow Manual & SOP Guide */}
           {onOpenManual && (
@@ -261,74 +287,116 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
-          {/* User Role Switcher Dropdown */}
+          {/* User Profile & Session Dropdown */}
           <div className="relative">
             <button
               onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-              className="flex items-center space-x-2 pl-2 pr-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/70 rounded-lg text-left transition-colors"
+              className="flex items-center space-x-2 pl-2 pr-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/70 rounded-lg text-left transition-colors relative cursor-pointer"
             >
               <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
+                src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                alt={currentUser?.name || 'User'}
                 className="w-7 h-7 rounded-full object-cover border border-emerald-400/50 shrink-0"
               />
               <div className="hidden xl:block leading-tight">
-                <div className="text-[11px] font-bold text-white truncate max-w-[130px]">{currentUser.name}</div>
-                <div className="text-[9px] text-emerald-300 truncate max-w-[130px]">{currentUser.role}</div>
+                <div className="text-[11px] font-bold text-white truncate max-w-[130px]">{currentUser?.name || 'User'}</div>
+                <div className="text-[9px] text-emerald-300 truncate max-w-[130px]">{currentUser?.role || 'Guest'}</div>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+
+              {/* Pending Approvals Badge for Admins */}
+              {canManageUsers && pendingUsersCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white rounded-full text-[9px] font-black flex items-center justify-center animate-pulse">
+                  {pendingUsersCount}
+                </span>
+              )}
             </button>
 
-            {/* Role Dropdown Menu */}
+            {/* Profile & Session Popover */}
             {roleDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="p-3 bg-emerald-900 text-white">
-                  <div className="text-[11px] uppercase tracking-wider text-emerald-200 font-bold">
-                    Active User Role & Access Level
+              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="p-3.5 bg-emerald-900 text-white">
+                  <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-bold flex items-center justify-between">
+                    <span>Authenticated User Session</span>
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-950 text-[9px] border border-emerald-500/30 text-emerald-300">
+                      Active
+                    </span>
                   </div>
-                  <div className="font-semibold text-sm mt-0.5">{currentUser.name}</div>
-                  <div className="text-xs text-emerald-300">{currentUser.department}</div>
+                  <div className="font-bold text-sm mt-1 text-white">{currentUser?.name}</div>
+                  <div className="text-xs text-emerald-300 font-medium">{currentUser?.role}</div>
+                  <div className="text-[11px] text-emerald-200/80 mt-0.5 truncate">{currentUser?.department}</div>
                 </div>
 
-                <div className="p-2 border-b border-slate-100 bg-slate-50 text-[11px] text-slate-500 flex items-center justify-between">
-                  <span>Switch Role to Test Access Rights:</span>
-                  <Shield className="w-3.5 h-3.5 text-emerald-600" />
-                </div>
+                {/* Admin User Approvals Button */}
+                {canManageUsers && onOpenUserManagement && (
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        onOpenUserManagement();
+                      }}
+                      className="w-full px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <span>User Directory & Approvals</span>
+                      </div>
+                      {pendingUsersCount > 0 && (
+                        <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-500 text-white font-black">
+                          {pendingUsersCount} pending
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
 
-                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 p-1">
-                  {users.map((u) => {
-                    const isSelected = u.id === currentUser.id;
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          setCurrentUser(u);
-                          setRoleDropdownOpen(false);
-                        }}
-                        className={`w-full p-2 text-left rounded-lg transition-colors flex items-center justify-between text-xs ${
-                          isSelected ? 'bg-emerald-50 text-emerald-900 font-semibold' : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2.5">
-                          <img
-                            src={u.avatar}
-                            alt={u.name}
-                            className="w-6 h-6 rounded-full object-cover shrink-0"
-                          />
-                          <div>
-                            <div className="font-medium text-slate-900 leading-tight">{u.name}</div>
-                            <div className="text-[10px] text-slate-500 leading-tight">{u.role}</div>
-                          </div>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* For System Administrator: Optional Testing Simulator */}
+                {currentUser?.role === 'System Administrator' && (
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 text-[11px]">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1 flex items-center justify-between">
+                      <span>Admin Role Simulator (Testing Only)</span>
+                      <Shield className="w-3 h-3 text-emerald-500" />
+                    </div>
+                    <div className="max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1">
+                      {users.map((u) => {
+                        const isSelected = u.id === currentUser.id;
+                        return (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => {
+                              setCurrentUser(u);
+                              setRoleDropdownOpen(false);
+                            }}
+                            className={`w-full px-2 py-1.5 text-left rounded-md transition-colors flex items-center justify-between text-[11px] ${
+                              isSelected
+                                ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-semibold'
+                                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            <span className="truncate">{u.name} ({u.role})</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-                <div className="p-2.5 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span>Role restricts navigation tabs & data permissions per Section IV mandates.</span>
+                {/* Log Out Button */}
+                <div className="p-2 bg-slate-50 dark:bg-slate-950/80">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRoleDropdownOpen(false);
+                      logout();
+                    }}
+                    className="w-full px-3 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>Log Out / Exit Session</span>
+                  </button>
                 </div>
               </div>
             )}

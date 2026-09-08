@@ -49,6 +49,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'System Administrator',
     department: 'MTO - ICT & Systems Unit',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-2',
@@ -57,6 +60,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Municipal Tourism Officer',
     department: 'Office of the Municipal Tourism Action Officer / Municipal Tourism Operations Division',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-3',
@@ -65,6 +71,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Administrative and Finance Personnel',
     department: 'Administrative & Financial Management Division',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-4',
@@ -73,6 +82,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Research and Planning Personnel',
     department: 'Tourism Research, Statistics & GIS Unit',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-5',
@@ -81,6 +93,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Policy Support and Regulation Personnel',
     department: 'Inspection, Standards & Regulatory Unit',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-6',
@@ -89,6 +104,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Product Development Personnel',
     department: 'Tourism Product & Community Enterprise Unit',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-7',
@@ -97,6 +115,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Promotion and Marketing Personnel',
     department: 'Brand, Media Relations & Travel Trade Unit',
     avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-8',
@@ -105,6 +126,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Social Media Manager',
     department: 'Digital Media & Content Production Unit',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-9',
@@ -113,6 +137,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Tourism Information Officer',
     department: 'Tourism Information & Assistance Center (TIAC)',
     avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-10',
@@ -121,6 +148,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Data Encoder',
     department: 'Visitor Records & Registration Unit',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
   {
     id: 'usr-11',
@@ -129,6 +159,9 @@ export const INITIAL_USERS: UserProfile[] = [
     role: 'Guest/User',
     department: 'Civic Transparency Portal',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    status: 'Active',
+    password: 'Malungon2026!',
+    createdAt: '2026-01-01',
   },
 ];
 

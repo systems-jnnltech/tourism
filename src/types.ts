@@ -11,6 +11,8 @@ export type UserRole =
   | 'Data Encoder'
   | 'Guest/User';
 
+export type UserStatus = 'Active' | 'Pending Approval' | 'Rejected' | 'Deactivated';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -18,6 +20,12 @@ export interface UserProfile {
   role: UserRole;
   department: string;
   avatar: string;
+  status: UserStatus;
+  requestedRole?: UserRole;
+  createdAt?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  password?: string;
 }
 
 export type ThemeMode = 'light' | 'dark';

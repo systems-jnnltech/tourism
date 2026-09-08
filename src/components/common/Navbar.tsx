@@ -5,11 +5,8 @@ import {
   Database,
   BellRing,
   CloudSun,
-  UserCheck,
   ChevronDown,
-  Shield,
   Search,
-  Check,
   AlertCircle,
   Menu,
   X,
@@ -22,7 +19,6 @@ import {
   Users
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
-import { UserRole } from '../../types';
 
 interface NavbarProps {
   onOpenAudit: () => void;
@@ -49,8 +45,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const {
     currentUser,
-    setCurrentUser,
-    users,
     logout,
     canManageUsers,
     canAccessAudit,
@@ -351,39 +345,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 )}
 
-                {/* For System Administrator: Optional Testing Simulator */}
-                {currentUser?.role === 'System Administrator' && (
-                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 text-[11px]">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1 flex items-center justify-between">
-                      <span>Admin Role Simulator (Testing Only)</span>
-                      <Shield className="w-3 h-3 text-emerald-500" />
-                    </div>
-                    <div className="max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1">
-                      {users.map((u) => {
-                        const isSelected = u.id === currentUser.id;
-                        return (
-                          <button
-                            key={u.id}
-                            type="button"
-                            onClick={() => {
-                              setCurrentUser(u);
-                              setRoleDropdownOpen(false);
-                            }}
-                            className={`w-full px-2 py-1.5 text-left rounded-md transition-colors flex items-center justify-between text-[11px] ${
-                              isSelected
-                                ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-semibold'
-                                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                            }`}
-                          >
-                            <span className="truncate">{u.name} ({u.role})</span>
-                            {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {/* Log Out Button */}
                 <div className="p-2 bg-slate-50 dark:bg-slate-950/80">
                   <button
@@ -408,7 +369,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {isReadOnly && (
         <div className="bg-amber-600 text-white px-4 py-1 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5" />
-          <span>Viewing in Public Guest Mode (Read-Only). Switch role from top-right to unlock operational editing.</span>
+          <span>Viewing in Public Guest Mode (Read-Only). Sign in with an authorized LGU personnel account to perform operational editing.</span>
         </div>
       )}
     </header>

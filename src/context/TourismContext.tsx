@@ -227,13 +227,34 @@ const TourismContext = createContext<TourismContextType | undefined>(undefined);
 const STORAGE_KEY = 'mtodms_malungon_v1';
 
 export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Users state initialized from localStorage or INITIAL_USERS
+  // Users state initialized from localStorage or INITIAL_USERS (with automatic legacy demo cleanup)
   const [users, setUsers] = useState<UserProfile[]>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_users`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Check if storage contains old demo users or lacks Junniell Mahinay
+          const hasJunniell = parsed.some((u: UserProfile) => u.email.toLowerCase() === 'systems@malungon.gov.ph');
+          const hasLegacyDemos = parsed.some((u: UserProfile) => 
+            u.id === 'usr-1' || 
+            u.id === 'usr-3' || 
+            u.email === 'admin.tourism@malungon.gov.ph' ||
+            u.email === 'visitor@public.gov.ph'
+          );
+
+          if (!hasJunniell || hasLegacyDemos) {
+            // Filter out old demo user IDs while keeping any newly created custom accounts
+            const customCreatedUsers = parsed.filter((u: UserProfile) => {
+              const isOldDemoId = ['usr-1', 'usr-2', 'usr-3', 'usr-4', 'usr-5', 'usr-6', 'usr-7', 'usr-8', 'usr-9', 'usr-10', 'usr-11'].includes(u.id);
+              return !isOldDemoId && u.id !== 'usr-admin' && u.id !== 'usr-officer';
+            });
+            const cleaned = [...INITIAL_USERS, ...customCreatedUsers];
+            localStorage.setItem(`${STORAGE_KEY}_users`, JSON.stringify(cleaned));
+            return cleaned;
+          }
+          return parsed;
+        }
       }
       return INITIAL_USERS;
     } catch {
@@ -250,13 +271,23 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [users]);
 
-  // Current session user (null if not logged in)
+  // Current session user (null if not logged in; auto-clears if session was an old demo account)
   const [currentUser, setCurrentUserState] = useState<UserProfile | null>(() => {
     try {
       const savedSession = localStorage.getItem(`${STORAGE_KEY}_session_user`);
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
-        if (parsed && parsed.id) return parsed;
+        if (parsed && parsed.id) {
+          // Invalidate session if it was a legacy demo account
+          const isLegacy = ['usr-1', 'usr-2', 'usr-3', 'usr-4', 'usr-5', 'usr-6', 'usr-7', 'usr-8', 'usr-9', 'usr-10', 'usr-11'].includes(parsed.id) ||
+            parsed.email === 'admin.tourism@malungon.gov.ph' ||
+            parsed.email === 'visitor@public.gov.ph';
+          if (isLegacy) {
+            localStorage.removeItem(`${STORAGE_KEY}_session_user`);
+            return null;
+          }
+          return parsed;
+        }
       }
       return null;
     } catch {
@@ -729,6 +760,8 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         u.email.toLowerCase() === cleanId ||
         u.id.toLowerCase() === cleanId ||
         u.name.toLowerCase() === cleanId ||
+        (cleanId === 'admin' && u.role === 'System Administrator') ||
+        (cleanId === 'systems' && u.email.toLowerCase() === 'systems@malungon.gov.ph') ||
         u.role.toLowerCase().replace(/\s+/g, '_') === cleanId ||
         u.role.toLowerCase() === cleanId
     );
@@ -832,7 +865,7 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
       sendNotification(
         'Email',
-        'admin.tourism@malungon.gov.ph',
+        'systems@malungon.gov.ph',
         'New Staff Account Awaiting Approval',
         `Registration request from ${newUser.name} (${cleanEmail}) for ${data.requestedRole}. Review in User Approvals.`
       );
@@ -1452,6 +1485,8 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTiacLogs(INITIAL_TIAC_LOGS);
     setLostAndFound(INITIAL_LOST_AND_FOUND);
     setDocuments(INITIAL_DOCUMENTS);
+    setUsers(INITIAL_USERS);
+    setCurrentUser(null);
     addAuditLog('UPDATE', 'Database Management', 'Reset system state to official baseline seed data');
   };
 

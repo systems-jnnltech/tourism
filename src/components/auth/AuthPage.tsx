@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ShieldCheck,
   Lock,
@@ -11,7 +11,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Sparkles,
   ArrowRight,
   UserPlus,
   LogIn,
@@ -22,7 +21,7 @@ import { useTourism } from '../../context/TourismContext';
 import { UserRole } from '../../types';
 
 export const AuthPage: React.FC = () => {
-  const { login, registerUser, users, municipalityInfo } = useTourism();
+  const { login, registerUser, municipalityInfo } = useTourism();
 
   // Mode: 'login' | 'register'
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -47,9 +46,6 @@ export const AuthPage: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccessMessage, setRegSuccessMessage] = useState<string | null>(null);
-
-  // Quick-role drawer open state
-  const [showQuickRoles, setShowQuickRoles] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,13 +119,6 @@ export const AuthPage: React.FC = () => {
     } finally {
       setIsRegistering(false);
     }
-  };
-
-  const handleQuickFill = (user: typeof users[0]) => {
-    setLoginIdentifier(user.email);
-    setLoginPassword(user.password || 'Malungon2026!');
-    setLoginError(null);
-    setIsPendingApproval(false);
   };
 
   const isStaffRole = (role: UserRole) => role !== 'Guest/User';
@@ -257,7 +246,7 @@ export const AuthPage: React.FC = () => {
                     required
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="e.g. tourism.officer@malungon.gov.ph or admin"
+                    placeholder="e.g. systems@malungon.gov.ph or admin"
                     className="w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                   />
                 </div>
@@ -289,7 +278,7 @@ export const AuthPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Remember Me & Assistance Link */}
+              {/* Remember Me */}
               <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
@@ -300,14 +289,9 @@ export const AuthPage: React.FC = () => {
                   />
                   <span>Keep session active</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowQuickRoles(!showQuickRoles)}
-                  className="text-emerald-400 hover:text-emerald-300 font-semibold inline-flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Demo Roles</span>
-                </button>
+                <span className="text-[11px] text-slate-500">
+                  LGU Malungon Secure Portal
+                </span>
               </div>
 
               {/* Sign In Button */}
@@ -325,33 +309,6 @@ export const AuthPage: React.FC = () => {
                   </>
                 )}
               </button>
-
-              {/* Collapsible 1-Click Demo Roles Drawer */}
-              {showQuickRoles && (
-                <div className="p-3 bg-slate-950/90 rounded-xl border border-slate-800 space-y-2 mt-2 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
-                    <span className="flex items-center gap-1 text-emerald-400">
-                      <Sparkles className="w-3 h-3" /> Quick-Fill Demo Personnel
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-normal">Pass: Malungon2026!</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                    {users.map((u) => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => handleQuickFill(u)}
-                        className="text-left px-2 py-1.5 rounded bg-slate-900 hover:bg-emerald-950/60 border border-slate-800 hover:border-emerald-500/40 transition-all group"
-                      >
-                        <div className="text-[11px] font-semibold text-white group-hover:text-emerald-300 truncate">
-                          {u.name}
-                        </div>
-                        <div className="text-[9px] text-slate-400 truncate">{u.role}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </form>
           )}
 

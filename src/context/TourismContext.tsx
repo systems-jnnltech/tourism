@@ -417,7 +417,17 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [employees, setEmployees] = useState<EmployeeRecord[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_employees`);
-    return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((e: EmployeeRecord) => e.id !== 'emp-admin' && e.id !== 'emp-001');
+        }
+      } catch (err) {
+        console.warn('Failed to parse cached employees', err);
+      }
+    }
+    return INITIAL_EMPLOYEES;
   });
 
   const [inventory, setInventory] = useState<OfficeInventoryItem[]>(() => {
@@ -677,7 +687,13 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // 6. Employees
       const remoteEmp = await fetchTableData<EmployeeRecord>('employees');
       if (remoteEmp && remoteEmp.length > 0) {
-        setEmployees(remoteEmp);
+        const cleanEmp = remoteEmp.filter((e) => e.id !== 'emp-admin' && e.id !== 'emp-001');
+        const hadMock = remoteEmp.some((e) => e.id === 'emp-admin' || e.id === 'emp-001');
+        if (hadMock) {
+          deleteTableRow('employees', 'emp-admin').catch(() => {});
+          deleteTableRow('employees', 'emp-001').catch(() => {});
+        }
+        setEmployees(cleanEmp);
       } else if (remoteEmp && remoteEmp.length === 0) {
         await seedTableIfEmpty('employees', INITIAL_EMPLOYEES);
       }

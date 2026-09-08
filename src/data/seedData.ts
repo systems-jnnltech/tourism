@@ -76,40 +76,8 @@ export const INITIAL_DESTINATIONS: TourismDestination[] = [];
 
 export const INITIAL_EVENTS: TourismEvent[] = [];
 
-export const INITIAL_EMPLOYEES: EmployeeRecord[] = [
-  {
-    id: 'emp-admin',
-    employeeNumber: 'MTO-2021-001',
-    name: 'Junniell Mahinay',
-    appointment: 'Permanent',
-    position: 'Information Technology Officer / System Administrator',
-    employmentStatus: 'Active',
-    leaveCredits: 35.0,
-    dailyTimeRecordHoursThisMonth: 168,
-    performanceEvaluationRating: 'Outstanding (4.98/5.00)',
-    trainings: ['Government Cybersecurity & Data Privacy (DICT)', 'Cloud Infrastructure & Database Systems', 'Enterprise RBAC & Systems Architecture'],
-    designation: 'System Administrator / ICT Head',
-    serviceRecordYears: 6,
-    email: 'systems@malungon.gov.ph',
-    contact: '+63 917 888 1234',
-  },
-  {
-    id: 'emp-001',
-    employeeNumber: 'MTO-2016-004',
-    name: 'CRISTINA D. CONSTANTINO-LA PAZ',
-    appointment: 'Permanent',
-    position: 'Municipal Tourism Action Officer-Designate',
-    employmentStatus: 'Active',
-    leaveCredits: 42.5,
-    dailyTimeRecordHoursThisMonth: 168,
-    performanceEvaluationRating: 'Outstanding (4.95/5.00)',
-    trainings: ['DOT National Tourism Officers Advanced Leadership (AIM)', 'Local Tourism Development Planning Workshop', 'Crisis Management for Tourism Destinations'],
-    designation: 'Municipal Tourism Action Officer-Designate / Head, Municipal Tourism Operations Division',
-    serviceRecordYears: 10,
-    email: 'tourism.officer@malungon.gov.ph',
-    contact: '+63 917 888 7766',
-  },
-];
+export const INITIAL_EMPLOYEES: EmployeeRecord[] = [];
+
 
 export const INITIAL_INVENTORY: OfficeInventoryItem[] = [];
 

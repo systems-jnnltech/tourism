@@ -287,7 +287,7 @@ export const AdminFinanceView: React.FC = () => {
       condition: 'Serviceable',
       acquisitionDate: new Date().toISOString().split('T')[0],
       acquisitionCost: 0,
-      assignedTo: employees[0]?.name || 'Junniell Mahinay',
+      assignedTo: employees[0]?.name || '',
       location: 'Municipal Tourism Office, 2nd Floor',
     });
     setIsInventoryModalOpen(true);
@@ -638,8 +638,32 @@ export const AdminFinanceView: React.FC = () => {
                 <tbody className="divide-y divide-slate-100">
                   {filteredEmployees.length === 0 ? (
                     <tr>
-                      <td colSpan={isReadOnly ? 6 : 7} className="p-8 text-center text-slate-400">
-                        No personnel matching your criteria. Click "Add Personnel" to register a staff member.
+                      <td colSpan={isReadOnly ? 6 : 7} className="py-12 px-4 text-center">
+                        <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
+                          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                            <Users className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">
+                              {searchTerm ? 'No matching personnel found' : 'No personnel records registered'}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {searchTerm
+                                ? `No staff records matched "${searchTerm}". Try a different keyword.`
+                                : 'Start building your CSC-compliant Plantilla and HR roster by adding your first staff member.'}
+                            </p>
+                          </div>
+                          {!isReadOnly && !searchTerm && (
+                            <button
+                              type="button"
+                              onClick={handleOpenAddPersonnel}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>Add First Personnel</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -1530,7 +1554,7 @@ export const AdminFinanceView: React.FC = () => {
                     required
                     value={inventoryForm.assignedTo}
                     onChange={(e) => setInventoryForm({ ...inventoryForm, assignedTo: e.target.value })}
-                    placeholder="e.g. Junniell Mahinay"
+                    placeholder="e.g. Staff / Custodian Name"
                     list="personnel-options"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />

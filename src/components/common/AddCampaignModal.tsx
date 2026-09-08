@@ -1,39 +1,46 @@
-import React, { useState } from 'react';
-import { X, Megaphone, Check, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Megaphone, Check, AlertCircle, Compass } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { MarketingCampaign } from '../../types';
 
 interface AddCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultType?: MarketingCampaign['type'];
 }
 
-export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onClose }) => {
+export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onClose, defaultType }) => {
   const { addCampaign } = useTourism();
 
   const [campaignTitle, setCampaignTitle] = useState('');
-  const [type, setType] = useState<MarketingCampaign['type']>('Promotional Campaign');
-  const [targetAudience, setTargetAudience] = useState('SOCCSKSARGEN & Davao Region Travelers, Eco-tourists');
+  const [type, setType] = useState<MarketingCampaign['type']>(defaultType || 'Promotional Campaign');
+  const [targetAudience, setTargetAudience] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
-  const [budget, setBudget] = useState<number>(75000);
-  const [leadPartner, setLeadPartner] = useState('MTO Malungon Media & Information Team');
-  const [channelsText, setChannelsText] = useState('Facebook, Instagram, TikTok, Local Radio');
+  const [budget, setBudget] = useState<number | ''>('');
+  const [leadPartner, setLeadPartner] = useState('');
+  const [channelsText, setChannelsText] = useState('');
   const [status, setStatus] = useState<MarketingCampaign['status']>('Active');
-  const [deliverablesSummary, setDeliverablesSummary] = useState(
-    'High-resolution promotional reels, digital posters, and local radio tourism plugs'
-  );
-  const [viewsOrReach, setViewsOrReach] = useState<number>(25000);
+  const [deliverablesSummary, setDeliverablesSummary] = useState('');
+  const [viewsOrReach, setViewsOrReach] = useState<number | ''>('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (defaultType) {
+        setType(defaultType);
+      }
+    }
+  }, [isOpen, defaultType]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignTitle.trim()) {
-      setError('Please provide the campaign title');
+      setError(type === 'Travel Fair / Expo' ? 'Please provide the expo/fair name' : 'Please provide the campaign title');
       return;
     }
 
@@ -45,18 +52,24 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
     addCampaign({
       campaignTitle: campaignTitle.trim(),
       type,
-      targetAudience: targetAudience.trim(),
+      targetAudience: targetAudience.trim() || (type === 'Travel Fair / Expo' ? 'B2B Buyers, Travel Agents & Consumers' : 'General Public / Regional Travelers'),
       startDate,
       endDate,
       budget: Number(budget) || 0,
-      channels: channels.length > 0 ? channels : ['Social Media'],
-      leadPartner: leadPartner.trim(),
+      channels: channels.length > 0 ? channels : (type === 'Travel Fair / Expo' ? ['Travel Expo Booth', 'B2B Business Matching'] : ['Social Media']),
+      leadPartner: leadPartner.trim() || 'LGU Malungon MTO',
       status,
-      deliverablesSummary: deliverablesSummary.trim(),
+      deliverablesSummary: deliverablesSummary.trim() || (type === 'Travel Fair / Expo' ? 'Pavilion booth exhibition and tourism promotions' : 'Tourism marketing campaign'),
       viewsOrReach: Number(viewsOrReach) || 0,
     });
 
     setCampaignTitle('');
+    setTargetAudience('');
+    setBudget('');
+    setViewsOrReach('');
+    setChannelsText('');
+    setDeliverablesSummary('');
+    setLeadPartner('');
     setError('');
     onClose();
   };
@@ -68,10 +81,16 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
         <div className="p-5 bg-sky-900 text-white flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-sky-800 rounded-lg">
-              <Megaphone className="w-5 h-5 text-sky-200" />
+              {type === 'Travel Fair / Expo' ? (
+                <Compass className="w-5 h-5 text-sky-200" />
+              ) : (
+                <Megaphone className="w-5 h-5 text-sky-200" />
+              )}
             </div>
             <div>
-              <h3 className="font-bold text-base leading-tight">Launch Marketing Campaign</h3>
+              <h3 className="font-bold text-base leading-tight">
+                {type === 'Travel Fair / Expo' ? 'Record Travel Fair / Expo' : 'Launch Marketing Campaign'}
+              </h3>
               <p className="text-xs text-sky-200">Promotion & Marketing Unit (PMU)</p>
             </div>
           </div>
@@ -79,7 +98,7 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
             id="close-add-campaign-modal"
             type="button"
             onClick={onClose}
-            className="p-1.5 text-sky-300 hover:text-white hover:bg-sky-800 rounded-lg transition-colors"
+            className="p-1.5 text-sky-300 hover:text-white hover:bg-sky-800 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -96,13 +115,17 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Campaign Title *
+              {type === 'Travel Fair / Expo' ? 'Expo / Fair / Roadshow Name *' : 'Campaign Title *'}
             </label>
             <input
               id="campaign-title-input"
               type="text"
               required
-              placeholder="e.g., Summer in Malungon: High Altitude Escapes 2026"
+              placeholder={
+                type === 'Travel Fair / Expo'
+                  ? 'e.g., 36th Philippine Travel Mart (PhilTOA) 2026'
+                  : 'e.g., Summer in Malungon: High Altitude Escapes 2026'
+              }
               value={campaignTitle}
               onChange={(e) => setCampaignTitle(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
@@ -184,22 +207,24 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
                 type="number"
                 min="0"
                 step="1000"
+                placeholder="0"
                 value={budget}
-                onChange={(e) => setBudget(Number(e.target.value))}
+                onChange={(e) => setBudget(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Target / Achieved Views & Reach
+                {type === 'Travel Fair / Expo' ? 'Inquiries / Leads Generated' : 'Target / Achieved Views & Reach'}
               </label>
               <input
                 id="campaign-reach-input"
                 type="number"
                 min="0"
+                placeholder="0"
                 value={viewsOrReach}
-                onChange={(e) => setViewsOrReach(Number(e.target.value))}
+                onChange={(e) => setViewsOrReach(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
               />
             </div>
@@ -207,12 +232,16 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Distribution Channels (comma-separated)
+              {type === 'Travel Fair / Expo' ? 'Pavilion Features / Collaterals' : 'Distribution Channels (comma-separated)'}
             </label>
             <input
               id="campaign-channels-input"
               type="text"
-              placeholder="Facebook, TikTok, Instagram, YouTube, Local Cable"
+              placeholder={
+                type === 'Travel Fair / Expo'
+                  ? 'e.g., LGU Thematic Pavilion, B2B Buyer Matching, Tourism Brochures'
+                  : 'Facebook, TikTok, Instagram, YouTube, Local Cable'
+              }
               value={channelsText}
               onChange={(e) => setChannelsText(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
@@ -221,12 +250,16 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Lead Partner / Media Agency
+              {type === 'Travel Fair / Expo' ? 'Host / Venue / Partner Agency' : 'Lead Partner / Media Agency'}
             </label>
             <input
               id="campaign-lead-input"
               type="text"
-              placeholder="e.g., LGU Malungon MIO & DOT Region XII"
+              placeholder={
+                type === 'Travel Fair / Expo'
+                  ? 'e.g., SMX Convention Center, Pasay City / PhilTOA'
+                  : 'e.g., LGU Malungon MIO & DOT Region XII'
+              }
               value={leadPartner}
               onChange={(e) => setLeadPartner(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
@@ -235,11 +268,16 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Deliverables & Creative Assets Summary
+              {type === 'Travel Fair / Expo' ? 'Pavilion Highlights / Recognition' : 'Deliverables & Creative Assets Summary'}
             </label>
             <textarea
               id="campaign-summary-input"
               rows={3}
+              placeholder={
+                type === 'Travel Fair / Expo'
+                  ? 'e.g., Thematic Highland Pavilion showcase, B2B package buyer matches, Best Thematic Pavilion award'
+                  : 'e.g., High-resolution promotional reels, digital posters, and local radio tourism plugs'
+              }
               value={deliverablesSummary}
               onChange={(e) => setDeliverablesSummary(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
@@ -252,17 +290,17 @@ export const AddCampaignModal: React.FC<AddCampaignModalProps> = ({ isOpen, onCl
               id="cancel-add-campaign-btn"
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+              className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               id="submit-add-campaign-btn"
               type="submit"
-              className="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors"
+              className="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              <span>Record Marketing Campaign</span>
+              <span>{type === 'Travel Fair / Expo' ? 'Record Travel Fair / Expo' : 'Record Marketing Campaign'}</span>
             </button>
           </div>
         </form>

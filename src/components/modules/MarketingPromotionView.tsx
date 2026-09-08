@@ -19,38 +19,18 @@ import {
   Cloud
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
+import { MarketingCampaign } from '../../types';
 import { AddCampaignModal } from '../common/AddCampaignModal';
 
 export const MarketingPromotionView: React.FC = () => {
-  const { campaigns, deleteCampaign, isSupabaseConnected } = useTourism();
+  const { campaigns, deleteCampaign, isSupabaseConnected, isReadOnly } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [modalDefaultType, setModalDefaultType] = useState<MarketingCampaign['type']>('Promotional Campaign');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Travel Fairs attended
-  const expos = [
-    {
-      expoName: '35th Philippine Travel Mart (PhilTOA)',
-      date: 'September 2026',
-      venue: 'SMX Convention Center, Pasay City',
-      leadsGenerated: 1420,
-      status: 'Participated / Active Leads',
-    },
-    {
-      expoName: 'Sarangani Provincial Tourism Expo',
-      date: 'May 2026',
-      venue: 'Capitol Grounds, Alabel',
-      leadsGenerated: 2850,
-      status: 'Awarded Best Thematic Pavilion',
-    },
-    {
-      expoName: 'Mindanao Travel & Lifestyle Expo',
-      date: 'November 2026',
-      venue: 'SM City General Santos',
-      leadsGenerated: 1800,
-      status: 'Upcoming Registration Confirmed',
-    },
-  ];
+  // Travel Fairs & Expos (dynamically derived from campaigns)
+  const travelFairs = campaigns.filter((c) => c.type === 'Travel Fair / Expo');
 
   // Aggregate Metrics
   const totalBudget = campaigns.reduce((acc, c) => acc + c.budget, 0);
@@ -94,8 +74,11 @@ export const MarketingPromotionView: React.FC = () => {
           <button
             id="open-add-campaign-btn"
             type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="px-3.5 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors"
+            onClick={() => {
+              setModalDefaultType('Promotional Campaign');
+              setIsAddModalOpen(true);
+            }}
+            className="px-3.5 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Launch Campaign</span>
@@ -164,83 +147,129 @@ export const MarketingPromotionView: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredCampaigns.map((camp) => (
-            <div
-              key={camp.id}
-              className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between hover:border-sky-300 transition-all"
-            >
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800">
-                    {camp.type}
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {camp.startDate} to {camp.endDate}
-                  </span>
-                </div>
-
-                <h4 className="font-bold text-slate-900 text-base">{camp.campaignTitle}</h4>
-                <p className="text-xs text-slate-600 mt-1">{camp.deliverablesSummary}</p>
-                <div className="text-xs text-slate-500 mt-2">
-                  <strong className="text-slate-700">Target:</strong> {camp.targetAudience}
-                </div>
-                <p className="text-xs text-sky-700 mt-2 font-medium">{(camp.channels || []).join(' • ')}</p>
-
-                <div className="grid grid-cols-2 gap-3 mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Campaign Reach:</span>
-                    <span className="font-black text-slate-900 text-sm">{camp.viewsOrReach.toLocaleString()} Views</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Budget Allocated:</span>
-                    <span className="font-black text-emerald-800 text-sm">₱{camp.budget.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
-                  Lead: <strong className="text-slate-800">{camp.leadPartner}</strong>
-                </span>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
-                      camp.status === 'Active'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : camp.status === 'In Production'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {camp.status}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete campaign "${camp.campaignTitle}"?`)) {
-                        deleteCampaign(camp.id);
-                      }
-                    }}
-                    title="Delete Campaign"
-                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+        {filteredCampaigns.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 mx-auto mb-3">
+              <Megaphone className="w-6 h-6" />
             </div>
-          ))}
-        </div>
+            <h4 className="text-sm font-bold text-slate-800">
+              {searchTerm || selectedTypeFilter !== 'All'
+                ? 'No matching marketing campaigns found'
+                : 'No marketing campaigns launched yet'}
+            </h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              {searchTerm || selectedTypeFilter !== 'All'
+                ? 'Try adjusting your search criteria or filter format.'
+                : 'Start promoting municipal tourism by recording your first promotional campaign, tourism video documentary, or media collateral.'}
+            </p>
+            {!isReadOnly && !searchTerm && selectedTypeFilter === 'All' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setModalDefaultType('Promotional Campaign');
+                  setIsAddModalOpen(true);
+                }}
+                className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Launch First Campaign</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {filteredCampaigns.map((camp) => (
+              <div
+                key={camp.id}
+                className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between hover:border-sky-300 transition-all"
+              >
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800">
+                      {camp.type}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">
+                      {camp.startDate} to {camp.endDate}
+                    </span>
+                  </div>
+
+                  <h4 className="font-bold text-slate-900 text-base">{camp.campaignTitle}</h4>
+                  <p className="text-xs text-slate-600 mt-1">{camp.deliverablesSummary}</p>
+                  <div className="text-xs text-slate-500 mt-2">
+                    <strong className="text-slate-700">Target:</strong> {camp.targetAudience}
+                  </div>
+                  <p className="text-xs text-sky-700 mt-2 font-medium">{(camp.channels || []).join(' • ')}</p>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Campaign Reach:</span>
+                      <span className="font-black text-slate-900 text-sm">{camp.viewsOrReach.toLocaleString()} Views</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Budget Allocated:</span>
+                      <span className="font-black text-emerald-800 text-sm">₱{camp.budget.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">
+                    Lead: <strong className="text-slate-800">{camp.leadPartner}</strong>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                        camp.status === 'Active'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : camp.status === 'In Production'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {camp.status}
+                    </span>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to delete campaign "${camp.campaignTitle}"?`)) {
+                            deleteCampaign(camp.id);
+                          }
+                        }}
+                        title="Delete Campaign"
+                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Travel Fairs & Expos Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Travel Fairs, Expos & Roadshows</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Travel Fairs, Expos & Roadshows ({travelFairs.length})</h3>
             <p className="text-xs text-slate-500">B2B buyer matching and direct consumer holiday promotions</p>
           </div>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={() => {
+                setModalDefaultType('Travel Fair / Expo');
+                setIsAddModalOpen(true);
+              }}
+              className="px-3 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Travel Fair / Expo</span>
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -249,25 +278,96 @@ export const MarketingPromotionView: React.FC = () => {
               <tr>
                 <th className="px-4 py-3">Expo / Fair Name</th>
                 <th className="px-4 py-3">Schedule</th>
-                <th className="px-4 py-3">Venue</th>
-                <th className="px-3 py-3">Visitor Inquiries</th>
-                <th className="px-3 py-3">Status & Recognition</th>
+                <th className="px-4 py-3">Venue / Host</th>
+                <th className="px-3 py-3">Visitor Inquiries / Leads</th>
+                <th className="px-3 py-3">Budget</th>
+                <th className="px-3 py-3">Status</th>
+                {!isReadOnly && <th className="px-3 py-3 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {expos.map((e, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-slate-900">{e.expoName}</td>
-                  <td className="px-4 py-3 text-slate-600">{e.date}</td>
-                  <td className="px-4 py-3 text-slate-600">{e.venue}</td>
-                  <td className="px-3 py-3 font-bold text-emerald-800">{e.leadsGenerated.toLocaleString()} leads</td>
-                  <td className="px-3 py-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                      {e.status}
-                    </span>
+              {travelFairs.length === 0 ? (
+                <tr>
+                  <td colSpan={isReadOnly ? 6 : 7} className="py-12 px-4 text-center">
+                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center text-sky-600">
+                        <Compass className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          No travel fairs or roadshows recorded
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Track B2B buyer matching, Philippine Travel Mart (PhilTOA), regional expos, and tourism roadshows.
+                        </p>
+                      </div>
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalDefaultType('Travel Fair / Expo');
+                            setIsAddModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Record First Travel Fair</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                travelFairs.map((e) => (
+                  <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-bold text-slate-900">
+                      <div>{e.campaignTitle}</div>
+                      {e.deliverablesSummary && (
+                        <div className="text-[11px] text-slate-500 font-normal mt-0.5">{e.deliverablesSummary}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 font-mono text-[11px]">
+                      {e.startDate} {e.endDate && e.endDate !== e.startDate ? `~ ${e.endDate}` : ''}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{e.leadPartner || 'N/A'}</td>
+                    <td className="px-3 py-3 font-bold text-emerald-800 font-mono">
+                      {e.viewsOrReach.toLocaleString()} leads
+                    </td>
+                    <td className="px-3 py-3 font-mono text-slate-700">
+                      ₱{e.budget.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          e.status === 'Active'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : e.status === 'Completed'
+                            ? 'bg-slate-100 text-slate-700'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {e.status}
+                      </span>
+                    </td>
+                    {!isReadOnly && (
+                      <td className="px-3 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete travel fair "${e.campaignTitle}"?`)) {
+                              deleteCampaign(e.id);
+                            }
+                          }}
+                          title="Delete Travel Fair"
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -277,6 +377,7 @@ export const MarketingPromotionView: React.FC = () => {
       <AddCampaignModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        defaultType={modalDefaultType}
       />
     </div>
   );

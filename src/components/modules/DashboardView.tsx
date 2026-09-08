@@ -1224,12 +1224,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
 
       {/* Official Executive Briefing Printable Modal */}
       {briefModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 sm:p-8 border border-slate-200 my-8">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full border border-slate-200 my-auto max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header (Sticky / Shrink-0) */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0 bg-slate-50/80">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200 shrink-0">
                   <FileText className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
@@ -1241,21 +1241,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
               </div>
               <button
                 onClick={() => setBriefModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors"
+                title="Close modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Printable Document Body */}
-            <div id="printable-executive-brief" className="space-y-6 text-slate-800 text-xs sm:text-sm font-sans bg-white p-2">
-              {/* Republic Letterhead */}
-              <div className="text-center border-b border-slate-200 pb-4">
-                <div className="text-[11px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
-                <div className="text-xs font-semibold text-slate-700">Province of Sarangani • Municipality of Malungon</div>
-                <div className="text-base font-black text-slate-900 mt-1 uppercase">Office of the Municipal Mayor</div>
-                <div className="text-xs font-bold text-indigo-800">MUNICIPAL TOURISM & CULTURAL AFFAIRS DIVISION</div>
-                <div className="text-[11px] text-slate-500 mt-1">Fiscal Year 2026 Executive Performance Briefing</div>
+            {/* Printable Document Body (Scrollable inside modal) */}
+            <div
+              id="printable-executive-brief"
+              className="overflow-y-auto flex-1 p-6 sm:p-8 space-y-6 text-slate-800 text-xs sm:text-sm font-sans bg-white"
+            >
+              {/* Republic Letterhead with Official Dual Logos */}
+              <div className="border-b-2 border-slate-800 pb-5">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <img
+                    src="/logo/LGU_LOGO1.png"
+                    alt="Official Seal of Malungon"
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 drop-shadow-xs"
+                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                  />
+                  <div className="text-center flex-1">
+                    <div className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">Republic of the Philippines</div>
+                    <div className="text-xs font-semibold text-slate-700">Province of Sarangani • Municipality of Malungon</div>
+                    <div className="text-sm sm:text-base font-black text-slate-900 mt-1 uppercase tracking-wide">Office of the Municipal Mayor</div>
+                    <div className="text-xs font-bold text-indigo-800">MUNICIPAL TOURISM & CULTURAL AFFAIRS DIVISION</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">Fiscal Year 2026 Executive Performance Briefing</div>
+                  </div>
+                  <img
+                    src="/logo/TourismLogo.png"
+                    alt="Municipal Tourism Office Logo"
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 drop-shadow-xs"
+                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                  />
+                </div>
               </div>
 
               {/* Executive Summary Narrative */}
@@ -1329,11 +1349,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+            {/* Modal Actions (Sticky Footer / Shrink-0) */}
+            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 bg-slate-50/80">
               <button
                 onClick={() => setBriefModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -1343,7 +1363,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                     title: 'Executive_Tourism_Summary_Brief_Malungon',
                   });
                 }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Official Summary</span>

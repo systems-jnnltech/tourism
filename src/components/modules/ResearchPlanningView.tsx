@@ -98,12 +98,6 @@ export const ResearchPlanningView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Empirical surveys, carrying capacity computations, economic impact multipliers, and MTDP 2024–2030 roadmap.
           </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
-              Cloud Synced (Table #20)
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">

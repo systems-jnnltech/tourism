@@ -146,12 +146,6 @@ export const TIACView: React.FC<TIACViewProps> = ({
           <p className="text-xs text-slate-500 mt-0.5">
             Front-desk visitor inquiries, emergency coordination, local tour guide bookings, lost & found custody, and tourist feedback & grievance tracking (TFRGS).
           </p>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold rounded-lg">
-              <Cloud className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{isSupabaseConnected ? 'Cloud Synced (Tables #9, #10, #15, #16)' : 'Local Storage Cache'}</span>
-            </span>
-          </div>
         </div>
 
         {/* Tab Selector */}

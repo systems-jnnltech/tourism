@@ -64,10 +64,6 @@ export const MarketingPromotionView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg">
-            <Cloud className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{isSupabaseConnected ? 'Cloud Synced (Table #14)' : 'Local Storage Cache'}</span>
-          </span>
           <span className="hidden sm:inline-block px-3 py-1.5 bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold rounded-lg">
             Brand: "Subida Malungon! Heart of Highlands"
           </span>

@@ -35,12 +35,6 @@ export const ProductDevelopmentView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Tourism circuits packaging, community-based tourism (CBT) incubation, and investment pipelines.
           </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
-              Cloud Synced (Table #19)
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">

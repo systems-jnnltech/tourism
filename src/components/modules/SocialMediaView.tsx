@@ -52,12 +52,6 @@ export const SocialMediaView: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">
             Omnichannel audience engagement tracking across official LGU Malungon Tourism social media channels.
           </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
-              Cloud Synced (Tables #21 & #22)
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">

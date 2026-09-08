@@ -30,6 +30,7 @@ import {
 import { useTourism } from '../../context/TourismContext';
 import { MSMETourism } from '../../types';
 import { MSMECertificateModal } from '../common/MSMECertificateModal';
+import { ImageUploader } from '../common/ImageUploader';
 
 export const MSMEView: React.FC = () => {
   const { msmes, addMsme, updateMsme, deleteMsme, isReadOnly } = useTourism();
@@ -1110,12 +1111,13 @@ export const MSMEView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Cover Product Photo URL</label>
-                  <input
-                    type="url"
+                  <ImageUploader
+                    label="Cover Product Photo"
+                    folder="msmes"
                     value={formData.productPhotos[0] || ''}
-                    onChange={(e) => setFormData({ ...formData, productPhotos: [e.target.value] })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800"
+                    onChange={(url) => setFormData({ ...formData, productPhotos: url ? [url] : [] })}
+                    placeholder="https://images.unsplash.com/... or /msme/product.jpg"
+                    helperText="Upload artisanal, culinary, or tourism souvenir product showcase photo."
                   />
                 </div>
               </div>

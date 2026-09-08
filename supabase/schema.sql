@@ -312,3 +312,33 @@ CREATE POLICY "Full access to tourist_complaints" ON tourist_complaints FOR ALL 
 CREATE POLICY "Full access to tourist_feedback" ON tourist_feedback FOR ALL USING (true);
 CREATE POLICY "Full access to official_documents" ON official_documents FOR ALL USING (true);
 CREATE POLICY "Full access to audit_logs" ON audit_logs FOR ALL USING (true);
+
+-- ==============================================================================
+-- 12. SUPABASE OBJECT STORAGE (Buckets & Policies for Photos and Media)
+-- ==============================================================================
+
+-- Create public storage bucket for MTODMS images (destinations, MSME, establishments)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('tourism-media', 'tourism-media', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public read access to all images in 'tourism-media'
+CREATE POLICY "Public Read Access for tourism-media"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'tourism-media');
+
+-- Allow inserts (uploads) to 'tourism-media'
+CREATE POLICY "Allow Uploads to tourism-media"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'tourism-media');
+
+-- Allow updates / replaces in 'tourism-media'
+CREATE POLICY "Allow Updates to tourism-media"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'tourism-media');
+
+-- Allow deletions in 'tourism-media'
+CREATE POLICY "Allow Deletes in tourism-media"
+ON storage.objects FOR DELETE
+USING (bucket_id = 'tourism-media');
+

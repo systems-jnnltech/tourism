@@ -13,7 +13,9 @@ import {
   AlertCircle,
   Menu,
   X,
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { UserRole } from '../../types';
@@ -39,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleMobileMenu,
   mobileMenuOpen = false,
 }) => {
-  const { currentUser, setCurrentUser, users, municipalityInfo, notifications, isReadOnly } = useTourism();
+  const { currentUser, setCurrentUser, users, municipalityInfo, notifications, isReadOnly, theme, toggleTheme } = useTourism();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -211,6 +213,32 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">SOP Manual</span>
             </button>
           )}
+
+          {/* Dark / Light Mode Toggle Button */}
+          <button
+            id="theme-toggle-btn"
+            type="button"
+            onClick={toggleTheme}
+            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center space-x-1.5 shadow-xs ${
+              theme === 'dark'
+                ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700 hover:border-amber-400/50'
+                : 'bg-slate-800 hover:bg-slate-700 text-indigo-200 border-slate-700 hover:border-indigo-400/50'
+            }`}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle dark mode or light mode"
+          >
+            {theme === 'dark' ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
+                <span className="hidden lg:inline text-[11px] font-medium text-amber-200">Light</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-indigo-300" />
+                <span className="hidden lg:inline text-[11px] font-medium text-indigo-200">Dark</span>
+              </>
+            )}
+          </button>
 
           {/* User Role Switcher Dropdown */}
           <div className="relative">

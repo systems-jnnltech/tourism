@@ -117,7 +117,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased overflow-hidden print:h-auto print:overflow-visible print:bg-white">
+    <div className="h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased overflow-hidden print:h-auto print:overflow-visible print:bg-white transition-colors duration-200">
       {/* Top Navbar */}
       <Navbar
         onOpenAudit={() => setAuditModalOpen(true)}
@@ -139,7 +139,7 @@ const MainLayout: React.FC = () => {
         />
 
         {/* Dynamic Center Work Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50/70 pb-16 print:overflow-visible print:h-auto print:p-0 print:m-0 print:bg-white">
+        <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50/70 dark:bg-slate-950/90 pb-16 print:overflow-visible print:h-auto print:p-0 print:m-0 print:bg-white transition-colors duration-200">
           {renderModule()}
         </main>
       </div>

@@ -20,6 +20,8 @@ export interface UserProfile {
   avatar: string;
 }
 
+export type ThemeMode = 'light' | 'dark';
+
 export type ModuleKey =
   | 'dashboard'
   | 'tourists'

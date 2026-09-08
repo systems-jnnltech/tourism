@@ -1,5 +1,92 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   GLOBAL DARK MODE ADAPTIVE DESIGN SPECIFICATIONS
+   ========================================================================== */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #020617 !important; /* slate-950 */
+  color: #f8fafc !important; /* slate-50 */
+}
+
+/* Card surfaces and containers */
+html.dark .bg-white:not(.force-light, .leaflet-popup-tip, [class*="bg-emerald-"], [class*="bg-amber-"], [class*="bg-rose-"], [class*="bg-blue-"], [class*="bg-indigo-"], [class*="bg-teal-"], [class*="bg-purple-"]) {
+  background-color: #0f172a !important; /* slate-900 */
+}
+
+html.dark .bg-slate-50:not(.force-light, .leaflet-popup-tip) {
+  background-color: #020617 !important; /* slate-950 */
+}
+
+html.dark .bg-slate-100:not(.force-light) {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+/* Borders & Dividers */
+html.dark .border-slate-200:not(.force-light),
+html.dark .border-slate-100:not(.force-light) {
+  border-color: #1e293b !important; /* slate-800 */
+}
+
+html.dark .border-slate-300:not(.force-light) {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b !important;
+}
+
+/* Text elements */
+html.dark .text-slate-900:not(.force-light),
+html.dark .text-slate-800:not(.force-light) {
+  color: #f8fafc !important; /* slate-50 */
+}
+
+html.dark .text-slate-700:not(.force-light),
+html.dark .text-slate-600:not(.force-light) {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+html.dark .text-slate-500:not(.force-light) {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Hover surfaces */
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #1e293b !important;
+}
+
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #334155 !important;
+}
+
+/* Form inputs & controls */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Modals & Dialog overlays */
+html.dark .bg-white.rounded-xl,
+html.dark .bg-white.rounded-2xl {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
 /* Leaflet Custom Marker & Popup Enhancements */
 .leaflet-div-icon.custom-leaflet-marker {
   background: transparent !important;

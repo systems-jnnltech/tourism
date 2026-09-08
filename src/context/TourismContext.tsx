@@ -72,6 +72,11 @@ interface SystemNotification {
 }
 
 interface TourismContextType {
+  // Theme & Appearance
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+
   // Cloud Sync (Supabase)
   isSupabaseConnected: boolean;
   isSyncing: boolean;
@@ -202,6 +207,41 @@ const STORAGE_KEY = 'mtodms_malungon_v1';
 export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserProfile>(INITIAL_USERS[1]); // Default to Municipal Tourism Officer
   const [activeModule, setActiveModule] = useState<ModuleKey>('dashboard');
+
+  // Theme Mode (Dark / Light) with system preference detection and localStorage persistence
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('mtodms_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const root = document.documentElement;
+      if (theme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+      localStorage.setItem('mtodms_theme', theme);
+    } catch (e) {
+      console.warn('Theme update error:', e);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  const setTheme = (newTheme: 'light' | 'dark') => {
+    setThemeState(newTheme);
+  };
 
   // Load from localStorage or fallback to initial seeds
   const [tourists, setTourists] = useState<TouristArrival[]>(() => {
@@ -1138,6 +1178,9 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <TourismContext.Provider
       value={{
+        theme,
+        toggleTheme,
+        setTheme,
         isSupabaseConnected,
         isSyncing,
         syncWithSupabase,

@@ -31,14 +31,14 @@ import { useTourism } from '../../context/TourismContext';
 import { AddResearchModal } from '../common/AddResearchModal';
 
 export const ResearchPlanningView: React.FC = () => {
-  const { research, deleteResearch, destinations, isReadOnly } = useTourism();
+  const { research, deleteResearch, destinations, tourists, isReadOnly } = useTourism();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Interactive Carrying Capacity Simulator State
   const [selectedDestId, setSelectedDestId] = useState(destinations[0]?.id || '');
-  const [totalAreaM2, setTotalAreaM2] = useState<number>(12000);
+  const [totalAreaM2, setTotalAreaM2] = useState<number>(10000);
   const [spacePerVisitorM2, setSpacePerVisitorM2] = useState<number>(25);
-  const [operatingHours, setOperatingHours] = useState<number>(10);
+  const [operatingHours, setOperatingHours] = useState<number>(9);
   const [avgVisitHours, setAvgVisitHours] = useState<number>(2.5);
   const [weatherFactor, setWeatherFactor] = useState<number>(0.85); // 15% rain interruption
   const [erosionFactor, setErosionFactor] = useState<number>(0.80); // slope vulnerability
@@ -57,43 +57,33 @@ export const ResearchPlanningView: React.FC = () => {
     const dest = destinations.find((d) => d.id === destId);
     if (!dest) return;
 
-    if (dest.siteName.includes('Kalon Barak')) {
-      setTotalAreaM2(25000);
-      setSpacePerVisitorM2(35);
-      setOperatingHours(12);
-      setAvgVisitHours(3);
-      setWeatherFactor(0.8);
-      setErosionFactor(0.75);
-      setMgmtCapacityPercent(80);
-    } else if (dest.siteName.includes('Villamor') || dest.siteName.includes('Spring')) {
-      setTotalAreaM2(8000);
-      setSpacePerVisitorM2(15);
-      setOperatingHours(8);
-      setAvgVisitHours(2);
-      setWeatherFactor(0.9);
-      setErosionFactor(0.85);
-      setMgmtCapacityPercent(75);
-    } else {
-      setTotalAreaM2(dest.carryingCapacityDaily * 20);
-      setSpacePerVisitorM2(25);
-      setOperatingHours(9);
-      setAvgVisitHours(2.5);
-      setWeatherFactor(0.85);
-      setErosionFactor(0.8);
-      setMgmtCapacityPercent(70);
-    }
+    const baseDaily = dest.carryingCapacityDaily || 200;
+    setTotalAreaM2(baseDaily * 25);
+    setSpacePerVisitorM2(25);
+    setOperatingHours(9);
+    setAvgVisitHours(2.5);
+    setWeatherFactor(0.85);
+    setErosionFactor(0.80);
+    setMgmtCapacityPercent(75);
   };
 
-  // Forecast projection dataset
-  const forecastData = [
-    { year: '2022 (Actual)', arrivals: 18400, revenue: 14.2 },
-    { year: '2023 (Actual)', arrivals: 26200, revenue: 21.5 },
-    { year: '2024 (Actual)', arrivals: 34800, revenue: 31.8 },
-    { year: '2025 (Actual)', arrivals: 44100, revenue: 42.6 },
-    { year: '2026 (Target)', arrivals: 55000, revenue: 58.0 },
-    { year: '2027 (Projected)', arrivals: 68000, revenue: 74.5 },
-    { year: '2028 (Projected)', arrivals: 82000, revenue: 95.0 },
-  ];
+  // Derive empirical arrival and revenue trajectory from actual recorded tourist logs
+  const yearlyMap: Record<string, { arrivals: number; revenue: number }> = {};
+  tourists.forEach((t) => {
+    const yr = t.dateOfVisit ? t.dateOfVisit.split('-')[0] : '2026';
+    if (!yearlyMap[yr]) {
+      yearlyMap[yr] = { arrivals: 0, revenue: 0 };
+    }
+    yearlyMap[yr].arrivals += 1;
+    yearlyMap[yr].revenue += (Number(t.touristSpending) || 0) / 1_000_000;
+  });
+
+  const recordedYears = Object.keys(yearlyMap).sort();
+  const forecastData = recordedYears.map((yr) => ({
+    year: `${yr} (Actual)`,
+    arrivals: yearlyMap[yr].arrivals,
+    revenue: Number(yearlyMap[yr].revenue.toFixed(2)),
+  }));
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
@@ -118,7 +108,7 @@ export const ResearchPlanningView: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline-block px-3 py-1.5 bg-teal-50 border border-teal-200 text-teal-800 text-xs font-semibold rounded-lg">
-            MTDP 2024–2030 Blueprint
+            {research.length} {research.length === 1 ? 'Study Registered' : 'Studies Registered'}
           </span>
           <button
             id="open-add-research-btn"
@@ -129,6 +119,35 @@ export const ResearchPlanningView: React.FC = () => {
             <Plus className="w-4 h-4" />
             <span>Register Research Study</span>
           </button>
+        </div>
+      </div>
+
+      {/* Live RPU Metrics Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Research Studies</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">{research.length}</div>
+          <div className="text-[11px] text-teal-700 font-medium mt-1">Archived Municipal Papers</div>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Adopted by LGU</span>
+          <div className="text-2xl font-black text-emerald-800 mt-1">
+            {research.filter((r) => r.status === 'Adopted by LGU').length}
+          </div>
+          <div className="text-[11px] text-emerald-600 font-medium mt-1">SB Enacted Ordinances</div>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Monitored Eco-Sites</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">{destinations.length}</div>
+          <div className="text-[11px] text-slate-500 mt-1">Carrying Capacity Audited</div>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Visitor Dataset Size</span>
+          <div className="text-2xl font-black text-teal-900 font-mono mt-1">{tourists.length}</div>
+          <div className="text-[11px] text-teal-700 font-medium mt-1">Empirical Arrivals Logged</div>
         </div>
       </div>
 
@@ -157,11 +176,15 @@ export const ResearchPlanningView: React.FC = () => {
               onChange={(e) => handleDestinationPreset(e.target.value)}
               className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-800 font-medium focus:ring-2 focus:ring-teal-500"
             >
-              {destinations.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.siteName} ({d.classification})
-                </option>
-              ))}
+              {destinations.length === 0 ? (
+                <option value="">No registered destinations yet</option>
+              ) : (
+                destinations.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.siteName} ({d.classification})
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -355,21 +378,31 @@ export const ResearchPlanningView: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={forecastData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-              />
-              <Line yAxisId="left" type="monotone" dataKey="arrivals" name="Tourist Arrivals" stroke="#0d9488" strokeWidth={3} dot={{ r: 4 }} />
-              <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (PHP M)" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {forecastData.length === 0 ? (
+          <div className="h-64 w-full flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 p-6 text-center">
+            <TrendingUp className="w-8 h-8 text-slate-300 stroke-1 mb-2" />
+            <p className="font-semibold text-slate-700 text-sm">No Empirical Tourist Arrival Logs Recorded</p>
+            <p className="text-xs text-slate-400 max-w-md mt-1">
+              As tourist arrival entries are recorded in the Tourist Monitoring module, annual empirical trajectories and economic revenue multipliers will automatically generate here.
+            </p>
+          </div>
+        ) : (
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={forecastData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                />
+                <Line yAxisId="left" type="monotone" dataKey="arrivals" name="Tourist Arrivals" stroke="#0d9488" strokeWidth={3} dot={{ r: 4 }} />
+                <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (PHP M)" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* SWOT Analysis of Malungon Tourism */}
@@ -467,39 +500,63 @@ export const ResearchPlanningView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {research.map((study) => (
-                <tr key={study.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-slate-900 max-w-xs">{study.title}</td>
-                  <td className="px-4 py-3 text-slate-700">{study.leadResearcher}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold">
-                      {study.category}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 max-w-sm text-xs">{study.keyFindings}</td>
-                  <td className="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">{study.year}</td>
-                  <td className="px-3 py-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
-                      {study.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    {!isReadOnly && (
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Delete research study "${study.title}"?`)) {
-                            deleteResearch(study.id);
-                          }
-                        }}
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
-                        title="Delete Study"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+              {research.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
+                    <div className="max-w-sm mx-auto space-y-2">
+                      <BookOpenCheck className="w-8 h-8 mx-auto text-slate-300 stroke-1" />
+                      <p className="font-semibold text-slate-700 text-sm">No Research Studies Registered Yet</p>
+                      <p className="text-xs text-slate-400">
+                        Register a commissioned baseline study, carrying capacity assessment, or municipal survey to establish evidence-based tourism policy.
+                      </p>
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddModalOpen(true)}
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Register First Study</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                research.map((study) => (
+                  <tr key={study.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-bold text-slate-900 max-w-xs">{study.title}</td>
+                    <td className="px-4 py-3 text-slate-700">{study.leadResearcher}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                        {study.category}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 max-w-sm text-xs">{study.keyFindings}</td>
+                    <td className="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">{study.year}</td>
+                    <td className="px-3 py-3">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
+                        {study.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      {!isReadOnly && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete research study "${study.title}"?`)) {
+                              deleteResearch(study.id);
+                            }
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                          title="Delete Study"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

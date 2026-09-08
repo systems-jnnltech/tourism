@@ -16,7 +16,7 @@ export const AddResearchModal: React.FC<AddResearchModalProps> = ({ isOpen, onCl
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [category, setCategory] = useState<TourismResearch['category']>('Carrying Capacity Study');
   const [keyFindings, setKeyFindings] = useState('');
-  const [fileUrl, setFileUrl] = useState('/documents/research-study.pdf');
+  const [fileUrl, setFileUrl] = useState('');
   const [status, setStatus] = useState<TourismResearch['status']>('Adopted by LGU');
   const [error, setError] = useState('');
 
@@ -39,7 +39,7 @@ export const AddResearchModal: React.FC<AddResearchModalProps> = ({ isOpen, onCl
       year: Number(year) || new Date().getFullYear(),
       category,
       keyFindings: keyFindings.trim(),
-      fileUrl: fileUrl.trim() || '/documents/research-study.pdf',
+      fileUrl: fileUrl.trim(),
       status,
     });
 

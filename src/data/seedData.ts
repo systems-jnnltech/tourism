@@ -143,10 +143,10 @@ export const INITIAL_PRODUCTS: TourismProduct[] = [];
 export const INITIAL_CAMPAIGNS: MarketingCampaign[] = [];
 
 export const INITIAL_SOCIAL_METRICS: SocialMediaPlatformStat[] = [
-  { platform: 'Facebook', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
-  { platform: 'Instagram', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
-  { platform: 'TikTok', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
-  { platform: 'YouTube', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
+  { id: 'facebook', platform: 'Facebook', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
+  { id: 'instagram', platform: 'Instagram', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
+  { id: 'tiktok', platform: 'TikTok', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
+  { id: 'youtube', platform: 'YouTube', followers: 0, monthlyReach: 0, monthlyEngagement: 0, shares: 0, reactions: 0 },
 ];
 
 export const INITIAL_SCHEDULED_POSTS: ScheduledPost[] = [];

@@ -408,6 +408,20 @@ CREATE TABLE IF NOT EXISTS scheduled_posts (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 22. Social Media Channel Metrics (SMMS)
+CREATE TABLE IF NOT EXISTS social_media_metrics (
+    id TEXT PRIMARY KEY,
+    platform TEXT NOT NULL UNIQUE,
+    followers INTEGER NOT NULL DEFAULT 0,
+    monthly_reach INTEGER NOT NULL DEFAULT 0,
+    monthly_engagement INTEGER NOT NULL DEFAULT 0,
+    shares INTEGER NOT NULL DEFAULT 0,
+    reactions INTEGER NOT NULL DEFAULT 0,
+    top_post_title TEXT,
+    top_post_engagement TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
@@ -432,6 +446,7 @@ ALTER TABLE tourism_policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tourism_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tourism_research ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scheduled_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE social_media_metrics ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to directories (for visitor portal)
 DROP POLICY IF EXISTS "Public destinations read access" ON tourism_destinations;
@@ -530,6 +545,21 @@ CREATE POLICY "Full access to tourism_research" ON tourism_research FOR ALL USIN
 
 DROP POLICY IF EXISTS "Full access to scheduled_posts" ON scheduled_posts;
 CREATE POLICY "Full access to scheduled_posts" ON scheduled_posts FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Public social_media_metrics read access" ON social_media_metrics;
+CREATE POLICY "Public social_media_metrics read access" ON social_media_metrics FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Full access to social_media_metrics" ON social_media_metrics;
+CREATE POLICY "Full access to social_media_metrics" ON social_media_metrics FOR ALL USING (true);
+
+-- Seed initial channels if not existing
+INSERT INTO social_media_metrics (id, platform, followers, monthly_reach, monthly_engagement, shares, reactions, top_post_title, top_post_engagement)
+VALUES
+    ('facebook', 'Facebook', 0, 0, 0, 0, 0, '', ''),
+    ('instagram', 'Instagram', 0, 0, 0, 0, 0, '', ''),
+    ('tiktok', 'TikTok', 0, 0, 0, 0, 0, '', ''),
+    ('youtube', 'YouTube', 0, 0, 0, 0, 0, '', '')
+ON CONFLICT (id) DO NOTHING;
 
 -- ==============================================================================
 -- 12. SUPABASE OBJECT STORAGE (Buckets & Policies for Photos and Media)

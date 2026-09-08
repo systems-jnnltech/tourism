@@ -21,6 +21,7 @@ import {
   TourismProduct,
   TourismResearch,
   ScheduledPost,
+  SocialMediaPlatformStat,
 } from '../types';
 
 // Utility to convert camelCase object keys to snake_case for PostgreSQL
@@ -114,6 +115,22 @@ export async function updateTableRow(tableName: string, id: string, updatedObj: 
     return true;
   } catch (err) {
     console.error(`[Supabase Sync] Update exception on ${tableName}:`, err);
+    return false;
+  }
+}
+
+export async function upsertTableRow(tableName: string, dataObj: Record<string, any>): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  try {
+    const snakeRow = toSnakeCase(dataObj);
+    const { error } = await supabase.from(tableName).upsert(snakeRow, { onConflict: 'id' });
+    if (error) {
+      console.error(`[Supabase Sync] Upsert error on ${tableName}:`, error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(`[Supabase Sync] Upsert exception on ${tableName}:`, err);
     return false;
   }
 }

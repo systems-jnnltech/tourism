@@ -55,7 +55,7 @@ export const SocialMediaView: React.FC = () => {
           <div className="flex items-center gap-2 mt-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
               <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
-              Cloud Synced (Table #21)
+              Cloud Synced (Tables #21 & #22)
             </span>
           </div>
         </div>

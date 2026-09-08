@@ -401,6 +401,7 @@ export interface MarketingCampaign {
 
 // Social Media Management
 export interface SocialMediaPlatformStat {
+  id?: string;
   platform: 'Facebook' | 'Instagram' | 'TikTok' | 'YouTube';
   followers: number;
   monthlyReach: number;

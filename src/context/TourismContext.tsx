@@ -57,6 +57,7 @@ import {
   fetchTableData,
   insertTableRow,
   updateTableRow,
+  upsertTableRow,
   deleteTableRow,
   seedTableIfEmpty,
   checkSupabaseHealth,
@@ -827,6 +828,24 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (toSeed.length > 0) {
           await seedTableIfEmpty('scheduled_posts', toSeed);
         }
+      }
+
+      // 22. Social Media Metrics (SMMS)
+      const remoteSocial = await fetchTableData<SocialMediaPlatformStat>('social_media_metrics');
+      if (remoteSocial && remoteSocial.length > 0) {
+        const mergedMetrics = INITIAL_SOCIAL_METRICS.map((init) => {
+          const found = remoteSocial.find(
+            (r) => (r.platform && r.platform.toLowerCase() === init.platform.toLowerCase()) || r.id === init.id
+          );
+          return found ? { ...init, ...found } : init;
+        });
+        setSocialMetrics(mergedMetrics);
+      } else if (remoteSocial && remoteSocial.length === 0) {
+        const toSeed =
+          socialMetrics.length > 0
+            ? socialMetrics.map((s) => ({ ...s, id: s.id || s.platform.toLowerCase() }))
+            : INITIAL_SOCIAL_METRICS;
+        await seedTableIfEmpty('social_media_metrics', toSeed);
       }
     } catch (err) {
       console.warn('[Supabase Sync] Exception during sync cycle:', err);
@@ -1637,10 +1656,25 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     platform: SocialMediaPlatformStat['platform'],
     updated: Partial<SocialMediaPlatformStat>
   ) => {
+    const metricId = platform.toLowerCase();
+    let updatedStat: SocialMediaPlatformStat | undefined;
+
     setSocialMetrics((prev) =>
-      prev.map((item) => (item.platform === platform ? { ...item, ...updated } : item))
+      prev.map((item) => {
+        if (item.platform === platform) {
+          updatedStat = { ...item, ...updated, id: metricId, platform };
+          return updatedStat;
+        }
+        return item;
+      })
     );
     addAuditLog('UPDATE', 'Social Media Management', `Updated channel metrics for ${platform}`);
+
+    if (isSupabaseConfigured && updatedStat) {
+      upsertTableRow('social_media_metrics', updatedStat).catch((err) =>
+        console.warn('[Supabase Sync] updateSocialMetric failed:', err)
+      );
+    }
   };
 
   // TIAC & Lost and Found

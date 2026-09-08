@@ -14,6 +14,8 @@ import {
   OfficeInventoryItem,
   UserProfile,
   MarketingCampaign,
+  VisitorAssistanceLog,
+  LostAndFoundItem,
 } from '../types';
 
 // Utility to convert camelCase object keys to snake_case for PostgreSQL

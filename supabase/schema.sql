@@ -310,6 +310,33 @@ CREATE TABLE IF NOT EXISTS marketing_campaigns (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 15. TIAC Visitor Assistance Logs Table (Tourism Information and Assistance Center)
+CREATE TABLE IF NOT EXISTS tiac_assistance_logs (
+    id TEXT PRIMARY KEY,
+    timestamp TEXT NOT NULL,
+    visitor_name TEXT NOT NULL,
+    contact TEXT,
+    assistance_type TEXT NOT NULL,
+    details TEXT,
+    action_taken TEXT,
+    officer_in_charge TEXT,
+    status TEXT NOT NULL DEFAULT 'Resolved',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 16. Lost and Found Items Table (TIAC Custody)
+CREATE TABLE IF NOT EXISTS lost_and_found_items (
+    id TEXT PRIMARY KEY,
+    item_description TEXT NOT NULL,
+    location_found TEXT NOT NULL,
+    date_found DATE NOT NULL DEFAULT CURRENT_DATE,
+    found_by TEXT,
+    status TEXT NOT NULL DEFAULT 'Unclaimed',
+    date_claimed DATE,
+    claimant_name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
@@ -327,6 +354,8 @@ ALTER TABLE official_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marketing_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tiac_assistance_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lost_and_found_items ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to directories (for visitor portal)
 CREATE POLICY "Public destinations read access" ON tourism_destinations FOR SELECT USING (true);
@@ -334,6 +363,8 @@ CREATE POLICY "Public establishments read access" ON tourism_establishments FOR 
 CREATE POLICY "Public events read access" ON tourism_events FOR SELECT USING (true);
 CREATE POLICY "Public msme read access" ON msme_tourism FOR SELECT USING (true);
 CREATE POLICY "Public campaigns read access" ON marketing_campaigns FOR SELECT USING (true);
+CREATE POLICY "Public tiac_logs read access" ON tiac_assistance_logs FOR SELECT USING (true);
+CREATE POLICY "Public lost_found read access" ON lost_and_found_items FOR SELECT USING (true);
 
 -- Allow authenticated or anon access with API key for full CRUD
 CREATE POLICY "Full access to tourist_arrivals" ON tourist_arrivals FOR ALL USING (true);
@@ -350,6 +381,8 @@ CREATE POLICY "Full access to official_documents" ON official_documents FOR ALL 
 CREATE POLICY "Full access to audit_logs" ON audit_logs FOR ALL USING (true);
 CREATE POLICY "Full access to user_profiles" ON user_profiles FOR ALL USING (true);
 CREATE POLICY "Full access to marketing_campaigns" ON marketing_campaigns FOR ALL USING (true);
+CREATE POLICY "Full access to tiac_assistance_logs" ON tiac_assistance_logs FOR ALL USING (true);
+CREATE POLICY "Full access to lost_and_found_items" ON lost_and_found_items FOR ALL USING (true);
 
 -- ==============================================================================
 -- 12. SUPABASE OBJECT STORAGE (Buckets & Policies for Photos and Media)

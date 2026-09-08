@@ -201,10 +201,12 @@ interface TourismContextType {
   // TIAC
   tiacLogs: VisitorAssistanceLog[];
   addTiacLog: (log: Omit<VisitorAssistanceLog, 'id'>) => void;
+  deleteTiacLog: (id: string) => void;
 
   lostAndFound: LostAndFoundItem[];
   addLostItem: (item: Omit<LostAndFoundItem, 'id'>) => void;
   claimLostItem: (id: string, claimantName: string) => void;
+  deleteLostItem: (id: string) => void;
 
   // Documents
   documents: OfficialDocument[];
@@ -737,6 +739,28 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const toSeed = campaigns.length > 0 ? campaigns : INITIAL_CAMPAIGNS;
         if (toSeed.length > 0) {
           await seedTableIfEmpty('marketing_campaigns', toSeed);
+        }
+      }
+
+      // 15. TIAC Visitor Assistance Logs
+      const remoteTiac = await fetchTableData<VisitorAssistanceLog>('tiac_assistance_logs');
+      if (remoteTiac && remoteTiac.length > 0) {
+        setTiacLogs(remoteTiac);
+      } else if (remoteTiac && remoteTiac.length === 0) {
+        const toSeed = tiacLogs.length > 0 ? tiacLogs : INITIAL_TIAC_LOGS;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('tiac_assistance_logs', toSeed);
+        }
+      }
+
+      // 16. Lost and Found Items
+      const remoteLost = await fetchTableData<LostAndFoundItem>('lost_and_found_items');
+      if (remoteLost && remoteLost.length > 0) {
+        setLostAndFound(remoteLost);
+      } else if (remoteLost && remoteLost.length === 0) {
+        const toSeed = lostAndFound.length > 0 ? lostAndFound : INITIAL_LOST_AND_FOUND;
+        if (toSeed.length > 0) {
+          await seedTableIfEmpty('lost_and_found_items', toSeed);
         }
       }
     } catch (err) {
@@ -1471,15 +1495,37 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newLog: VisitorAssistanceLog = { id: `tiac-${Date.now()}`, ...logData };
     setTiacLogs((prev) => [newLog, ...prev]);
     addAuditLog('CREATE', 'TIAC Assistance', `Logged visitor assistance for ${newLog.visitorName}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('tiac_assistance_logs', newLog).catch((err) =>
+        console.warn('[Supabase Sync] addTiacLog failed:', err)
+      );
+    }
+  };
+
+  const deleteTiacLog = (id: string) => {
+    const logToDelete = tiacLogs.find((l) => l.id === id);
+    setTiacLogs((prev) => prev.filter((l) => l.id !== id));
+    addAuditLog('DELETE', 'TIAC Assistance', `Deleted assistance log record for ${logToDelete?.visitorName || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('tiac_assistance_logs', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteTiacLog failed:', err)
+      );
+    }
   };
 
   const addLostItem = (itemData: Omit<LostAndFoundItem, 'id'>) => {
     const newItem: LostAndFoundItem = { id: `lf-${Date.now()}`, ...itemData };
     setLostAndFound((prev) => [newItem, ...prev]);
     addAuditLog('CREATE', 'TIAC Lost & Found', `Recorded lost item: ${newItem.itemDescription}`);
+    if (isSupabaseConfigured) {
+      insertTableRow('lost_and_found_items', newItem).catch((err) =>
+        console.warn('[Supabase Sync] addLostItem failed:', err)
+      );
+    }
   };
 
   const claimLostItem = (id: string, claimantName: string) => {
+    const dateClaimed = new Date().toISOString().substring(0, 10);
     setLostAndFound((prev) =>
       prev.map((item) =>
         item.id === id
@@ -1487,12 +1533,32 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
               ...item,
               status: 'Claimed by Owner',
               claimantName,
-              dateClaimed: new Date().toISOString().replace('T', ' ').substring(0, 16),
+              dateClaimed,
             }
           : item
       )
     );
     addAuditLog('RESOLVE', 'TIAC Lost & Found', `Released item ${id} to verified owner ${claimantName}`);
+    if (isSupabaseConfigured) {
+      updateTableRow('lost_and_found_items', id, {
+        status: 'Claimed by Owner',
+        claimantName,
+        dateClaimed,
+      }).catch((err) =>
+        console.warn('[Supabase Sync] claimLostItem failed:', err)
+      );
+    }
+  };
+
+  const deleteLostItem = (id: string) => {
+    const itemToDelete = lostAndFound.find((i) => i.id === id);
+    setLostAndFound((prev) => prev.filter((i) => i.id !== id));
+    addAuditLog('DELETE', 'TIAC Lost & Found', `Deleted lost & found item record ${itemToDelete?.itemDescription || id}`);
+    if (isSupabaseConfigured) {
+      deleteTableRow('lost_and_found_items', id).catch((err) =>
+        console.warn('[Supabase Sync] deleteLostItem failed:', err)
+      );
+    }
   };
 
   // Documents
@@ -1702,9 +1768,11 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addScheduledPost,
         tiacLogs,
         addTiacLog,
+        deleteTiacLog,
         lostAndFound,
         addLostItem,
         claimLostItem,
+        deleteLostItem,
         documents,
         addDocument,
         auditLogs,

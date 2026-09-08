@@ -60,6 +60,11 @@ import {
   seedTableIfEmpty,
   checkSupabaseHealth,
 } from '../lib/supabaseSync';
+import {
+  WeatherTelemetryData,
+  fetchLiveWeatherTelemetry,
+  DEFAULT_WEATHER_TELEMETRY,
+} from '../lib/weatherService';
 
 interface SystemNotification {
   id: string;
@@ -72,6 +77,11 @@ interface SystemNotification {
 }
 
 interface TourismContextType {
+  // Live Weather Telemetry (Auto-updating via Open-Meteo)
+  weather: WeatherTelemetryData;
+  refreshWeather: () => Promise<void>;
+  isWeatherLoading: boolean;
+
   // Theme & Appearance
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -242,6 +252,36 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const setTheme = (newTheme: 'light' | 'dark') => {
     setThemeState(newTheme);
   };
+
+  // Live Weather Telemetry State (Auto-updating via Open-Meteo for Malungon, Sarangani)
+  const [weather, setWeather] = useState<WeatherTelemetryData>(() => {
+    try {
+      const cached = localStorage.getItem('mtodms_weather_cache');
+      return cached ? JSON.parse(cached) : DEFAULT_WEATHER_TELEMETRY;
+    } catch {
+      return DEFAULT_WEATHER_TELEMETRY;
+    }
+  });
+  const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
+
+  const refreshWeather = async () => {
+    setIsWeatherLoading(true);
+    try {
+      const latest = await fetchLiveWeatherTelemetry();
+      setWeather(latest);
+    } catch (e) {
+      console.warn('[Weather Telemetry] Refresh error:', e);
+    } finally {
+      setIsWeatherLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshWeather();
+    // Auto-update weather every 15 minutes (900,000 ms)
+    const interval = setInterval(refreshWeather, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Load from localStorage or fallback to initial seeds
   const [tourists, setTourists] = useState<TouristArrival[]>(() => {
@@ -1178,6 +1218,9 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <TourismContext.Provider
       value={{
+        weather,
+        refreshWeather,
+        isWeatherLoading,
         theme,
         toggleTheme,
         setTheme,

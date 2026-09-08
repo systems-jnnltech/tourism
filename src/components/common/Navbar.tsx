@@ -15,7 +15,9 @@ import {
   X,
   BookOpen,
   Sun,
-  Moon
+  Moon,
+  CloudRain,
+  CloudLightning
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { UserRole } from '../../types';
@@ -41,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleMobileMenu,
   mobileMenuOpen = false,
 }) => {
-  const { currentUser, setCurrentUser, users, municipalityInfo, notifications, isReadOnly, theme, toggleTheme } = useTourism();
+  const { currentUser, setCurrentUser, users, municipalityInfo, notifications, isReadOnly, theme, toggleTheme, weather } = useTourism();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -144,12 +146,31 @@ export const Navbar: React.FC<NavbarProps> = ({
             />
           </div>
 
-          {/* Real-time Weather Widget */}
-          <div className="bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1 flex items-center space-x-2 shrink-0 text-xs">
-            <CloudSun className="w-4 h-4 text-amber-400" />
-            <div>
-              <div className="text-[11px] font-bold text-slate-200">27°C • Highlands</div>
-              <div className="text-[9px] text-emerald-300">Clear Skies / Normal</div>
+          {/* Real-time Weather Widget (Live Open-Meteo Telemetry) */}
+          <div
+            className="bg-slate-800/80 border border-slate-700/80 rounded-lg px-2.5 py-1 flex items-center space-x-2 shrink-0 text-xs cursor-default transition-all"
+            title={`Live Malungon Highlands Telemetry (${weather.lastUpdated}): ${weather.conditionDetails} • Wind: ${weather.windSpeed} km/h ${weather.windDirection} • Humidity: ${weather.humidity}%`}
+          >
+            {weather.iconType === 'thunderstorm' ? (
+              <CloudLightning className="w-4 h-4 text-purple-400 animate-pulse shrink-0" />
+            ) : weather.iconType === 'rain' ? (
+              <CloudRain className="w-4 h-4 text-sky-400 shrink-0" />
+            ) : weather.iconType === 'clear' ? (
+              <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+            ) : (
+              <CloudSun className="w-4 h-4 text-amber-400 shrink-0" />
+            )}
+            <div className="leading-tight">
+              <div className="text-[11px] font-bold text-slate-200 flex items-center gap-1">
+                <span>{weather.temperature}°C</span>
+                <span className="text-[9px] text-slate-400 font-normal hidden sm:inline">• Malungon</span>
+                {weather.isLive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live Meteorological Feed Active" />
+                )}
+              </div>
+              <div className="text-[9px] text-emerald-300 truncate max-w-[105px]" title={weather.condition}>
+                {weather.condition}
+              </div>
             </div>
           </div>
         </div>

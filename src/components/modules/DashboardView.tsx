@@ -17,6 +17,10 @@ import {
   ArrowUpRight,
   ChevronRight,
   CloudSun,
+  Sun,
+  CloudRain,
+  CloudLightning,
+  Cloud,
   Droplets,
   Wind,
   Eye,
@@ -66,6 +70,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
     complaints,
     setActiveModule,
     municipalityInfo,
+    weather,
+    refreshWeather,
   } = useTourism();
 
   // State management
@@ -162,12 +168,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
   ];
 
   // Refresh handler
-  const handleRefreshData = () => {
+  const handleRefreshData = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
+    try {
+      await refreshWeather();
+    } catch (e) {
+      console.warn('Weather telemetry refresh error:', e);
+    } finally {
       setIsRefreshing(false);
       setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }, 600);
+    }
   };
 
   return (
@@ -734,19 +744,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">Weather Telemetry</span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.2 rounded-full border border-emerald-500/30">
-                  Normal Safety Level
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                    weather.safetyLevel === 'Hazard Alert'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                      : weather.safetyLevel === 'Advisory Watch'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  }`}
+                >
+                  {weather.safetyLevel}
                 </span>
               </div>
-              <CloudSun className="w-7 h-7 text-amber-400 animate-pulse" />
+              {weather.iconType === 'thunderstorm' ? (
+                <CloudLightning className="w-7 h-7 text-purple-400 animate-pulse" />
+              ) : weather.iconType === 'rain' ? (
+                <CloudRain className="w-7 h-7 text-sky-400 animate-pulse" />
+              ) : weather.iconType === 'clear' ? (
+                <Sun className="w-7 h-7 text-amber-400 animate-pulse" />
+              ) : weather.iconType === 'overcast' ? (
+                <Cloud className="w-7 h-7 text-slate-300 animate-pulse" />
+              ) : (
+                <CloudSun className="w-7 h-7 text-amber-400 animate-pulse" />
+              )}
             </div>
 
             <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-black tracking-tight">27°C</span>
-              <span className="text-indigo-200 text-sm font-semibold">Highland Cool (Kalon Barak)</span>
+              <span className="text-4xl font-black tracking-tight">{weather.temperature}°C</span>
+              <span className="text-indigo-200 text-sm font-semibold">{weather.condition}</span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Partly cloudy mountain skies over Kalon Barak Skyline Ridge and Alkikan forest reserve. Gentle highland breeze.
+              {weather.conditionDetails}
             </p>
 
             <div className="grid grid-cols-2 gap-2 mt-4 text-xs bg-slate-800/60 p-3 rounded-lg border border-slate-700/60">
@@ -754,27 +782,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                 <div className="text-slate-400 text-[10px] flex items-center gap-1">
                   <Droplets className="w-3 h-3 text-sky-400" /> Relative Humidity
                 </div>
-                <div className="font-bold text-white mt-0.5">74% (Optimal)</div>
+                <div className="font-bold text-white mt-0.5">{weather.humidity}% ({weather.humidity > 80 ? 'High' : weather.humidity < 40 ? 'Dry' : 'Optimal'})</div>
               </div>
               <div>
                 <div className="text-slate-400 text-[10px] flex items-center gap-1">
                   <Wind className="w-3 h-3 text-teal-400" /> Wind Velocity
                 </div>
-                <div className="font-bold text-white mt-0.5">12 km/h NE</div>
+                <div className="font-bold text-white mt-0.5">{weather.windSpeed} km/h {weather.windDirection}</div>
               </div>
               <div>
                 <div className="text-slate-400 text-[10px]">Cloud Cover</div>
-                <div className="font-bold text-white mt-0.5">25% Scattered</div>
+                <div className="font-bold text-white mt-0.5">{weather.cloudCover}% {weather.cloudCover > 70 ? 'Overcast' : weather.cloudCover > 30 ? 'Scattered' : 'Clear'}</div>
               </div>
               <div>
                 <div className="text-slate-400 text-[10px]">Highland Trails</div>
-                <div className="font-bold text-emerald-400 mt-0.5">Dry & Accessible</div>
+                <div
+                  className={`font-bold mt-0.5 ${
+                    weather.trailStatus === 'Slippery / Restricted'
+                      ? 'text-rose-400'
+                      : weather.trailStatus === 'Damp / 4x4 Preferred'
+                      ? 'text-amber-400'
+                      : 'text-emerald-400'
+                  }`}
+                >
+                  {weather.trailStatus}
+                </div>
               </div>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs">
-            <span className="text-slate-400 text-[11px]">PAGASA XII & MDRRMO Synced</span>
+            <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${weather.isLive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              Open-Meteo & MDRRMO • {weather.lastUpdated}
+            </span>
             {onOpenNotify && (
               <button
                 onClick={onOpenNotify}

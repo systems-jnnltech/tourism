@@ -170,28 +170,37 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
               <Users className="w-3.5 h-3.5" />
               Recent Broadcast Dispatch History
             </h4>
-            <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100 max-h-44 overflow-y-auto">
-              {notifications.map((n) => (
-                <div key={n.id} className="p-3 bg-white hover:bg-slate-50 text-xs">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          n.type === 'SMS'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {n.type}
-                      </span>
-                      <span className="font-semibold text-slate-800">{n.recipient}</span>
+            {notifications.length === 0 ? (
+              <div className="border border-dashed border-slate-200 rounded-lg p-5 text-center bg-slate-50/60">
+                <p className="text-xs font-semibold text-slate-600">No broadcast dispatches recorded yet</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Official advisories sent via the SMS Gateway or Email channel will appear in this log.
+                </p>
+              </div>
+            ) : (
+              <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100 max-h-44 overflow-y-auto">
+                {notifications.map((n) => (
+                  <div key={n.id} className="p-3 bg-white hover:bg-slate-50 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            n.type === 'SMS'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {n.type}
+                        </span>
+                        <span className="font-semibold text-slate-800">{n.recipient}</span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-mono">{n.sentAt}</span>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-mono">{n.sentAt}</span>
+                    <div className="text-slate-600 line-clamp-1">{n.message}</div>
                   </div>
-                  <div className="text-slate-600 line-clamp-1">{n.message}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

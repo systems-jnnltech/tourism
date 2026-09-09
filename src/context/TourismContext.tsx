@@ -518,26 +518,20 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return MUNICIPALITY_INFO;
   });
 
-  const [notifications, setNotifications] = useState<SystemNotification[]>([
-    {
-      id: 'notif-1',
-      type: 'SMS',
-      recipient: '+63 917 222 9876 (Kalon Barak Skyline)',
-      subject: 'Annual DOT Accreditation Renewal Notice',
-      message: 'Notice from MTO Malungon: Kindly submit your renewal documents by Jan 20, 2027.',
-      sentAt: '2026-09-02 08:30 AM',
-      status: 'Delivered',
-    },
-    {
-      id: 'notif-2',
-      type: 'Email',
-      recipient: 'all-enterprises@malungon.gov.ph',
-      subject: 'DOT Region XII Advisory: 18th Slang Festival Special Rates',
-      message: 'Encouraging all accredited accommodation providers to activate visitor discount packages for Slang Festival.',
-      sentAt: '2026-09-01 02:15 PM',
-      status: 'Delivered',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<SystemNotification[]>(() => {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_notifications`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((n: SystemNotification) => n.id !== 'notif-1' && n.id !== 'notif-2');
+        }
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
 
   // Save changes to localStorage
   useEffect(() => {
@@ -623,6 +617,10 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_audit`, JSON.stringify(auditLogs));
   }, [auditLogs]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_notifications`, JSON.stringify(notifications));
+  }, [notifications]);
 
   // Cloud Sync (Supabase) State & Synchronization
   const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(isSupabaseConfigured);
@@ -1818,6 +1816,7 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
         lostAndFound,
         documents,
         auditLogs,
+        notifications,
       },
     };
     addAuditLog('EXPORT', 'Database Management', 'Exported complete MTODMS system backup archive');
@@ -1848,6 +1847,7 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (d.tiacLogs) setTiacLogs(d.tiacLogs);
       if (d.lostAndFound) setLostAndFound(d.lostAndFound);
       if (d.documents) setDocuments(d.documents);
+      if (d.notifications) setNotifications(d.notifications);
       addAuditLog('UPDATE', 'Database Management', 'Successfully restored database from uploaded backup file');
       return true;
     } catch {
@@ -1875,6 +1875,7 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTiacLogs(INITIAL_TIAC_LOGS);
     setLostAndFound(INITIAL_LOST_AND_FOUND);
     setDocuments(INITIAL_DOCUMENTS);
+    setNotifications([]);
     setUsers(INITIAL_USERS);
     setCurrentUser(null);
     addAuditLog('UPDATE', 'Database Management', 'Reset system state to official baseline seed data');

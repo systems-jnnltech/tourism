@@ -199,7 +199,7 @@ interface TourismContextType {
   deleteCampaign: (id: string) => void;
 
   socialMetrics: SocialMediaPlatformStat[];
-  updateSocialMetric: (platform: SocialMediaPlatformStat['platform'], updated: Partial<SocialMediaPlatformStat>) => void;
+  updateSocialMetric: (platform: SocialMediaPlatformStat['platform'], updated: Partial<SocialMediaPlatformStat>, month?: string) => void;
   scheduledPosts: ScheduledPost[];
   addScheduledPost: (post: Omit<ScheduledPost, 'id'>) => void;
   deleteScheduledPost: (id: string) => void;
@@ -476,8 +476,27 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [socialMetrics, setSocialMetrics] = useState<SocialMediaPlatformStat[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_social_metrics`);
-    return saved ? JSON.parse(saved) : INITIAL_SOCIAL_METRICS;
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_social_metrics`);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item) => ({
+            ...item,
+            month: item.month || currentMonth,
+            id: item.id || `${item.platform.toLowerCase()}-${item.month || currentMonth}`,
+          }));
+        }
+      }
+      return INITIAL_SOCIAL_METRICS.map((item) => ({
+        ...item,
+        month: currentMonth,
+        id: `${item.platform.toLowerCase()}-${currentMonth}`,
+      }));
+    } catch {
+      return INITIAL_SOCIAL_METRICS;
+    }
   });
 
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>(() => {
@@ -847,18 +866,19 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // 22. Social Media Metrics (SMMS)
       const remoteSocial = await fetchTableData<SocialMediaPlatformStat>('social_media_metrics');
       if (remoteSocial && remoteSocial.length > 0) {
-        const mergedMetrics = INITIAL_SOCIAL_METRICS.map((init) => {
-          const found = remoteSocial.find(
-            (r) => (r.platform && r.platform.toLowerCase() === init.platform.toLowerCase()) || r.id === init.id
-          );
-          return found ? { ...init, ...found } : init;
-        });
-        setSocialMetrics(mergedMetrics);
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        const normalized = remoteSocial.map((r) => ({
+          ...r,
+          month: r.month || currentMonth,
+          id: r.id || `${r.platform.toLowerCase()}-${r.month || currentMonth}`,
+        }));
+        setSocialMetrics(normalized);
       } else if (remoteSocial && remoteSocial.length === 0) {
+        const currentMonth = new Date().toISOString().slice(0, 7);
         const toSeed =
           socialMetrics.length > 0
-            ? socialMetrics.map((s) => ({ ...s, id: s.id || s.platform.toLowerCase() }))
-            : INITIAL_SOCIAL_METRICS;
+            ? socialMetrics.map((s) => ({ ...s, id: s.id || `${s.platform.toLowerCase()}-${s.month || currentMonth}`, month: s.month || currentMonth }))
+            : INITIAL_SOCIAL_METRICS.map((s) => ({ ...s, id: `${s.platform.toLowerCase()}-${currentMonth}`, month: currentMonth }));
         await seedTableIfEmpty('social_media_metrics', toSeed);
       }
     } catch (err) {
@@ -1668,21 +1688,56 @@ export const TourismProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateSocialMetric = (
     platform: SocialMediaPlatformStat['platform'],
-    updated: Partial<SocialMediaPlatformStat>
+    updated: Partial<SocialMediaPlatformStat>,
+    month?: string
   ) => {
-    const metricId = platform.toLowerCase();
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const targetMonth = month || updated.month || currentMonth;
+    const metricId = `${platform.toLowerCase()}-${targetMonth}`;
     let updatedStat: SocialMediaPlatformStat | undefined;
 
-    setSocialMetrics((prev) =>
-      prev.map((item) => {
-        if (item.platform === platform) {
-          updatedStat = { ...item, ...updated, id: metricId, platform };
-          return updatedStat;
-        }
-        return item;
-      })
-    );
-    addAuditLog('UPDATE', 'Social Media Management', `Updated channel metrics for ${platform}`);
+    setSocialMetrics((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) => item.platform === platform && (item.month === targetMonth || (!item.month && targetMonth === currentMonth))
+      );
+
+      if (existingIndex >= 0) {
+        const existing = prev[existingIndex];
+        updatedStat = {
+          ...existing,
+          ...updated,
+          id: metricId,
+          platform,
+          month: targetMonth,
+        };
+        const copy = [...prev];
+        copy[existingIndex] = updatedStat;
+        return copy;
+      } else {
+        // Find latest follower count for this platform to use as base if not supplied
+        const lastRecord = prev
+          .filter((item) => item.platform === platform)
+          .sort((a, b) => (b.month || '').localeCompare(a.month || ''))[0];
+
+        updatedStat = {
+          id: metricId,
+          platform,
+          month: targetMonth,
+          followers: updated.followers !== undefined ? updated.followers : (lastRecord?.followers || 0),
+          monthlyReach: updated.monthlyReach || 0,
+          monthlyEngagement: updated.monthlyEngagement || 0,
+          shares: updated.shares || 0,
+          reactions: updated.reactions || 0,
+          topPostTitle: updated.topPostTitle || '',
+          topPostEngagement: updated.topPostEngagement || '',
+          targetReachConstraint: updated.targetReachConstraint,
+          ...updated,
+        };
+        return [...prev, updatedStat];
+      }
+    });
+
+    addAuditLog('UPDATE', 'Social Media Management', `Updated channel metrics for ${platform} (${targetMonth})`);
 
     if (isSupabaseConfigured && updatedStat) {
       upsertTableRow('social_media_metrics', updatedStat).catch((err) =>

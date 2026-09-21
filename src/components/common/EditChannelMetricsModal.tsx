@@ -7,16 +7,20 @@ interface EditChannelMetricsModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetPlatform?: SocialMediaPlatformStat['platform'] | null;
+  targetMonth?: string;
 }
 
 export const EditChannelMetricsModal: React.FC<EditChannelMetricsModalProps> = ({
   isOpen,
   onClose,
   targetPlatform = 'Facebook',
+  targetMonth,
 }) => {
   const { socialMetrics, updateSocialMetric } = useTourism();
 
+  const currentCalendarMonth = new Date().toISOString().slice(0, 7);
   const [platform, setPlatform] = useState<SocialMediaPlatformStat['platform']>('Facebook');
+  const [month, setMonth] = useState<string>(targetMonth || currentCalendarMonth);
   const [followers, setFollowers] = useState<number>(0);
   const [monthlyReach, setMonthlyReach] = useState<number>(0);
   const [monthlyEngagement, setMonthlyEngagement] = useState<number>(0);
@@ -24,13 +28,13 @@ export const EditChannelMetricsModal: React.FC<EditChannelMetricsModalProps> = (
   const [reactions, setReactions] = useState<number>(0);
   const [topPostTitle, setTopPostTitle] = useState<string>('');
   const [topPostEngagement, setTopPostEngagement] = useState<string>('');
+  const [targetReachConstraint, setTargetReachConstraint] = useState<number>(0);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Sync state with selected platform
-  useEffect(() => {
-    const activePlatform = targetPlatform || 'Facebook';
-    setPlatform(activePlatform);
-    const existing = socialMetrics.find((s) => s.platform === activePlatform);
+  const loadMetricsFor = (p: SocialMediaPlatformStat['platform'], m: string) => {
+    const existing = socialMetrics.find(
+      (s) => s.platform === p && (s.month === m || (!s.month && m === currentCalendarMonth))
+    );
     if (existing) {
       setFollowers(existing.followers || 0);
       setMonthlyReach(existing.monthlyReach || 0);
@@ -39,22 +43,41 @@ export const EditChannelMetricsModal: React.FC<EditChannelMetricsModalProps> = (
       setReactions(existing.reactions || 0);
       setTopPostTitle(existing.topPostTitle || '');
       setTopPostEngagement(existing.topPostEngagement || '');
+      setTargetReachConstraint(existing.targetReachConstraint || 0);
+    } else {
+      // Find latest record for this platform to pre-populate follower baseline
+      const latestRecord = socialMetrics
+        .filter((s) => s.platform === p)
+        .sort((a, b) => (b.month || '').localeCompare(a.month || ''))[0];
+      setFollowers(latestRecord?.followers || 0);
+      setMonthlyReach(0);
+      setMonthlyEngagement(0);
+      setShares(0);
+      setReactions(0);
+      setTopPostTitle('');
+      setTopPostEngagement('');
+      setTargetReachConstraint(latestRecord?.targetReachConstraint || 0);
     }
+  };
+
+  // Sync state with selected platform and month
+  useEffect(() => {
+    const activePlatform = targetPlatform || 'Facebook';
+    const activeMonth = targetMonth || month || currentCalendarMonth;
+    setPlatform(activePlatform);
+    setMonth(activeMonth);
+    loadMetricsFor(activePlatform, activeMonth);
     setSavedSuccess(false);
-  }, [isOpen, targetPlatform, socialMetrics]);
+  }, [isOpen, targetPlatform, targetMonth, socialMetrics]);
 
   const handlePlatformChange = (newPlatform: SocialMediaPlatformStat['platform']) => {
     setPlatform(newPlatform);
-    const existing = socialMetrics.find((s) => s.platform === newPlatform);
-    if (existing) {
-      setFollowers(existing.followers || 0);
-      setMonthlyReach(existing.monthlyReach || 0);
-      setMonthlyEngagement(existing.monthlyEngagement || 0);
-      setShares(existing.shares || 0);
-      setReactions(existing.reactions || 0);
-      setTopPostTitle(existing.topPostTitle || '');
-      setTopPostEngagement(existing.topPostEngagement || '');
-    }
+    loadMetricsFor(newPlatform, month);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    setMonth(newMonth);
+    loadMetricsFor(platform, newMonth);
   };
 
   if (!isOpen) return null;
@@ -62,15 +85,21 @@ export const EditChannelMetricsModal: React.FC<EditChannelMetricsModalProps> = (
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    updateSocialMetric(platform, {
-      followers: Math.max(0, Number(followers) || 0),
-      monthlyReach: Math.max(0, Number(monthlyReach) || 0),
-      monthlyEngagement: Math.max(0, Number(monthlyEngagement) || 0),
-      shares: Math.max(0, Number(shares) || 0),
-      reactions: Math.max(0, Number(reactions) || 0),
-      topPostTitle: topPostTitle.trim(),
-      topPostEngagement: topPostEngagement.trim(),
-    });
+    updateSocialMetric(
+      platform,
+      {
+        followers: Math.max(0, Number(followers) || 0),
+        monthlyReach: Math.max(0, Number(monthlyReach) || 0),
+        monthlyEngagement: Math.max(0, Number(monthlyEngagement) || 0),
+        shares: Math.max(0, Number(shares) || 0),
+        reactions: Math.max(0, Number(reactions) || 0),
+        topPostTitle: topPostTitle.trim(),
+        topPostEngagement: topPostEngagement.trim(),
+        targetReachConstraint: Number(targetReachConstraint) > 0 ? Number(targetReachConstraint) : undefined,
+        month,
+      },
+      month
+    );
 
     setSavedSuccess(true);
     setTimeout(() => {
@@ -108,27 +137,43 @@ export const EditChannelMetricsModal: React.FC<EditChannelMetricsModalProps> = (
           <div className="p-3 bg-pink-50/70 border border-pink-100 rounded-xl text-xs text-pink-900 flex items-start gap-2.5">
             <Sparkles className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold">Manual Insights Entry:</span> Enter official monthly figures from
-              Meta Business Suite, TikTok Creator Center, or YouTube Studio to update tourism KPIs and official LGU reports.
+              <span className="font-bold">Manual Monthly Insights Entry:</span> Enter official figures from
+              Meta Business Suite, TikTok Creator Center, or YouTube Studio for the selected month to update tourism KPIs and historical trend telemetry.
             </div>
           </div>
 
-          {/* Platform selector */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Select Channel / Platform
-            </label>
-            <select
-              id="metric-platform-select"
-              value={platform}
-              onChange={(e) => handlePlatformChange(e.target.value as SocialMediaPlatformStat['platform'])}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 bg-white focus:outline-hidden focus:ring-2 focus:ring-pink-500 font-semibold"
-            >
-              <option value="Facebook">Facebook (Official Tourism Page)</option>
-              <option value="Instagram">Instagram (@malungontourism)</option>
-              <option value="TikTok">TikTok (@malungon.tourism)</option>
-              <option value="YouTube">YouTube (Malungon Tourism Channel)</option>
-            </select>
+          {/* Month & Platform selector grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Reporting Month & Year
+              </label>
+              <input
+                id="metric-month-select"
+                type="month"
+                value={month}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 bg-white focus:outline-hidden focus:ring-2 focus:ring-pink-500 font-semibold"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Select Channel / Platform
+              </label>
+              <select
+                id="metric-platform-select"
+                value={platform}
+                onChange={(e) => handlePlatformChange(e.target.value as SocialMediaPlatformStat['platform'])}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 bg-white focus:outline-hidden focus:ring-2 focus:ring-pink-500 font-semibold"
+              >
+                <option value="Facebook">Facebook (Official Tourism Page)</option>
+                <option value="Instagram">Instagram (@malungontourism)</option>
+                <option value="TikTok">TikTok (@malungon.tourism)</option>
+                <option value="YouTube">YouTube (Malungon Tourism Channel)</option>
+              </select>
+            </div>
           </div>
 
           {/* Followers & Monthly Reach */}
@@ -202,21 +247,38 @@ export const EditChannelMetricsModal: React.FC<EditChannelMetricsModalProps> = (
             </div>
           </div>
 
-          {/* Reactions */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Total Reactions / Likes
-            </label>
-            <input
-              id="metric-reactions-input"
-              type="number"
-              min="0"
-              value={reactions}
-              onChange={(e) => setReactions(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-pink-500"
-              placeholder="e.g. 15400"
-              required
-            />
+          {/* Reactions & Target Constraint Benchmark */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Total Reactions / Likes
+              </label>
+              <input
+                id="metric-reactions-input"
+                type="number"
+                min="0"
+                value={reactions}
+                onChange={(e) => setReactions(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-pink-500"
+                placeholder="e.g. 15400"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Target Constraint (Reach Quota)
+              </label>
+              <input
+                id="metric-constraint-input"
+                type="number"
+                min="0"
+                value={targetReachConstraint || ''}
+                onChange={(e) => setTargetReachConstraint(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-pink-500"
+                placeholder="e.g. 50000 (Target Reach)"
+              />
+            </div>
           </div>
 
           {/* Top Post Details */}

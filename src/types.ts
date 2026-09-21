@@ -403,6 +403,7 @@ export interface MarketingCampaign {
 export interface SocialMediaPlatformStat {
   id?: string;
   platform: 'Facebook' | 'Instagram' | 'TikTok' | 'YouTube';
+  month?: string; // Format 'YYYY-MM', e.g. '2026-09'
   followers: number;
   monthlyReach: number;
   monthlyEngagement: number;
@@ -410,6 +411,7 @@ export interface SocialMediaPlatformStat {
   reactions: number;
   topPostTitle?: string;
   topPostEngagement?: string;
+  targetReachConstraint?: number;
 }
 
 export interface ScheduledPost {

@@ -169,8 +169,6 @@ const MainLayout: React.FC = () => {
         onOpenUserManagement={() => setUserMgmtModalOpen(true)}
         onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
         mobileMenuOpen={mobileMenuOpen}
-        isSidebarCollapsed={isSidebarCollapsed}
-        onToggleSidebar={toggleSidebar}
       />
 
       {/* Main Container with Sidebar and Content View */}

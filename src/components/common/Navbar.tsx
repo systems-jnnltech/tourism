@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Compass,
   History,
@@ -17,10 +17,32 @@ import {
   CloudLightning,
   LogOut,
   Users,
-  PanelLeftClose,
-  PanelLeftOpen
+  Building2,
+  MapPin,
+  Store,
+  Calendar,
+  ArrowRight
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
+import { ModuleKey } from '../../types';
+
+const SYSTEM_MODULES: { key: ModuleKey; label: string; description: string }[] = [
+  { key: 'dashboard', label: 'Executive Dashboard', description: 'Real-time LGU tourism metrics & overview' },
+  { key: 'tourists', label: 'Tourist Arrival Management (TAMS)', description: 'Visitor logs, DOT Form 1 & demographics' },
+  { key: 'tiac', label: 'Tourism Info & Assistance (TIAC)', description: 'Visitor feedback, complaints & inquiries' },
+  { key: 'establishments', label: 'Tourism Establishments (TED)', description: 'Resorts, hotels, homestays & inspection' },
+  { key: 'destinations', label: 'Tourism Destinations (DAIMS)', description: 'Attractions, carrying capacity & GIS coordinates' },
+  { key: 'msmes', label: 'MSME Tourism Database', description: 'Local producers, handicrafts & pasalubong' },
+  { key: 'events', label: 'Events Management System (EMS)', description: 'Festivals, cultural events & calendar' },
+  { key: 'marketing', label: 'Promotion & Marketing (PMU)', description: 'Campaigns, collaterals & promotions' },
+  { key: 'social_media', label: 'Social Media Analytics (SMMS)', description: 'Reach, engagements & platform metrics' },
+  { key: 'product_dev', label: 'Tourism Product Dev (TPDU)', description: 'Ecotourism circuits, trails & itineraries' },
+  { key: 'research_planning', label: 'Research & Planning Unit (RPU)', description: 'Studies, market research & master plans' },
+  { key: 'policy_regulation', label: 'Policy Support & Regulation (PSRU)', description: 'Ordinances, notices & compliance' },
+  { key: 'admin_finance', label: 'Administrative & Finance (AFS)', description: 'Budget, personnel & logistics' },
+  { key: 'documents', label: 'Document Management (DMS)', description: 'Resolutions, executive orders & memos' },
+  { key: 'reports', label: 'Report Generation Module (RGM)', description: 'DOT Form 1 & statutory exports' },
+];
 
 interface NavbarProps {
   onOpenAudit: () => void;
@@ -32,8 +54,6 @@ interface NavbarProps {
   onGlobalSearch?: (term: string) => void;
   onToggleMobileMenu?: () => void;
   mobileMenuOpen?: boolean;
-  isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -46,8 +66,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onGlobalSearch,
   onToggleMobileMenu,
   mobileMenuOpen = false,
-  isSidebarCollapsed = false,
-  onToggleSidebar,
 }) => {
   const {
     currentUser,
@@ -63,10 +81,108 @@ export const Navbar: React.FC<NavbarProps> = ({
     theme,
     toggleTheme,
     weather,
+    setActiveModule,
+    destinations,
+    establishments,
+    msmes,
+    events,
+    tourists,
   } = useTourism();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close search popover on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Multi-entity search calculation
+  const searchResults = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return null;
+
+    const matchedModules = SYSTEM_MODULES.filter(
+      (m) => m.label.toLowerCase().includes(q) || m.description.toLowerCase().includes(q) || m.key.toLowerCase().includes(q)
+    ).slice(0, 4);
+
+    const matchedDestinations = destinations
+      .filter(
+        (d) =>
+          d.siteName.toLowerCase().includes(q) ||
+          d.barangay.toLowerCase().includes(q) ||
+          d.classification.toLowerCase().includes(q)
+      )
+      .slice(0, 4);
+
+    const matchedEstablishments = establishments
+      .filter(
+        (e) =>
+          e.name.toLowerCase().includes(q) ||
+          e.category.toLowerCase().includes(q) ||
+          e.barangay.toLowerCase().includes(q)
+      )
+      .slice(0, 4);
+
+    const matchedMsmes = msmes
+      .filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          m.productCategory.toLowerCase().includes(q) ||
+          m.localProducts.toLowerCase().includes(q)
+      )
+      .slice(0, 4);
+
+    const matchedEvents = events
+      .filter(
+        (ev) =>
+          ev.eventName.toLowerCase().includes(q) ||
+          ev.venue.toLowerCase().includes(q)
+      )
+      .slice(0, 4);
+
+    const matchedTourists = tourists
+      .filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          t.touristId.toLowerCase().includes(q) ||
+          t.destinationVisited.toLowerCase().includes(q) ||
+          t.address.toLowerCase().includes(q)
+      )
+      .slice(0, 4);
+
+    const totalMatches =
+      matchedModules.length +
+      matchedDestinations.length +
+      matchedEstablishments.length +
+      matchedMsmes.length +
+      matchedEvents.length +
+      matchedTourists.length;
+
+    return {
+      modules: matchedModules,
+      destinations: matchedDestinations,
+      establishments: matchedEstablishments,
+      msmes: matchedMsmes,
+      events: matchedEvents,
+      tourists: matchedTourists,
+      totalMatches,
+    };
+  }, [searchTerm, destinations, establishments, msmes, events, tourists]);
+
+  const handleSelectResult = (moduleKey: ModuleKey) => {
+    setActiveModule(moduleKey);
+    setIsSearchOpen(false);
+    setSearchTerm('');
+  };
 
   // Philippine Standard Time real-time clock
   useEffect(() => {
@@ -125,34 +241,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Desktop Sidebar Toggle Button */}
-          {onToggleSidebar && (
-            <button
-              id="desktop-sidebar-toggle-btn"
-              type="button"
-              onClick={onToggleSidebar}
-              className="hidden md:flex p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              title={isSidebarCollapsed ? 'Expand Navigation Sidebar (Ctrl+B)' : 'Collapse Navigation Sidebar (Ctrl+B)'}
-              aria-label="Toggle navigation sidebar"
-            >
-              {isSidebarCollapsed ? (
-                <PanelLeftOpen className="w-5 h-5 text-emerald-400 hover:text-emerald-300" />
-              ) : (
-                <PanelLeftClose className="w-5 h-5 text-slate-400 hover:text-emerald-300" />
-              )}
-            </button>
-          )}
-
-          {/* Official Dual Logos: LGU Malungon Seal x Tourism Logo */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-800/80 px-2 py-1 rounded-xl border border-slate-700/60 shadow-xs">
+          {/* Official Dual Logos: LGU Malungon Seal & Tourism Logo (Side-by-Side without separator) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 bg-slate-800/80 px-2 py-1 rounded-xl border border-slate-700/60 shadow-xs">
               <img
                 src="/logo/LGU_LOGO1.png"
                 alt="Official Seal of the Municipality of Malungon"
                 className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 hover:scale-105 transition-transform shrink-0"
                 title="Official Seal of the Municipality of Malungon"
               />
-              <span className="text-emerald-400/80 font-black text-xs select-none">×</span>
               <img
                 src="/logo/TourismLogo.png"
                 alt="Malungon Municipal Tourism Office Logo"
@@ -177,17 +274,233 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Middle: Search & Weather */}
+        {/* Middle: Interactive Search & Weather */}
         <div className="hidden lg:flex items-center space-x-3 flex-1 max-w-md mx-2">
-          <div className="relative w-full">
+          <div ref={searchContainerRef} className="relative w-full">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search tourists, resorts, MSMEs, destinations, memos..."
+              placeholder="Search tourists, resorts, MSMEs, destinations, modules..."
               value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setIsSearchOpen(true);
+                onGlobalSearch?.(e.target.value);
+              }}
+              onFocus={() => {
+                if (searchTerm.trim()) setIsSearchOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setIsSearchOpen(false);
+              }}
+              className="w-full pl-8 pr-8 py-1.5 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setIsSearchOpen(false);
+                }}
+                className="absolute right-2.5 top-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {/* Live Interactive Search Results Popover */}
+            {isSearchOpen && searchResults && (
+              <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
+                {searchResults.totalMatches === 0 ? (
+                  <div className="p-6 text-center text-slate-400 text-xs">
+                    <Search className="w-6 h-6 text-slate-500 mx-auto mb-2 opacity-50" />
+                    <p className="font-semibold text-slate-300">No matching records found</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      No results matching &ldquo;{searchTerm}&rdquo; across destinations, MSMEs, resorts, or logs.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-800/70 p-2 space-y-2">
+                    {/* Modules Matches */}
+                    {searchResults.modules.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
+                          <Compass className="w-3 h-3" />
+                          <span>System Modules ({searchResults.modules.length})</span>
+                        </div>
+                        {searchResults.modules.map((mod) => (
+                          <button
+                            key={mod.key}
+                            type="button"
+                            onClick={() => handleSelectResult(mod.key)}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                          >
+                            <div>
+                              <div className="font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                                {mod.label}
+                              </div>
+                              <div className="text-[10px] text-slate-400">{mod.description}</div>
+                            </div>
+                            <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Destinations Matches */}
+                    {searchResults.destinations.length > 0 && (
+                      <div className="space-y-1 pt-1.5">
+                        <div className="text-[10px] font-bold text-teal-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3" />
+                          <span>Destinations & Attractions ({searchResults.destinations.length})</span>
+                        </div>
+                        {searchResults.destinations.map((dest) => (
+                          <button
+                            key={dest.id}
+                            type="button"
+                            onClick={() => handleSelectResult('destinations')}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                          >
+                            <div>
+                              <div className="font-semibold text-white group-hover:text-teal-300 transition-colors">
+                                {dest.siteName}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {dest.barangay} • {dest.classification}
+                              </div>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-teal-300 font-mono border border-slate-700">
+                              DAIMS
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Establishments Matches */}
+                    {searchResults.establishments.length > 0 && (
+                      <div className="space-y-1 pt-1.5">
+                        <div className="text-[10px] font-bold text-blue-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
+                          <Building2 className="w-3 h-3" />
+                          <span>Establishments & Resorts ({searchResults.establishments.length})</span>
+                        </div>
+                        {searchResults.establishments.map((est) => (
+                          <button
+                            key={est.id}
+                            type="button"
+                            onClick={() => handleSelectResult('establishments')}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                          >
+                            <div>
+                              <div className="font-semibold text-white group-hover:text-blue-300 transition-colors">
+                                {est.name}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {est.category} • {est.barangay}
+                              </div>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-blue-300 font-mono border border-slate-700">
+                              TED
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* MSMEs Matches */}
+                    {searchResults.msmes.length > 0 && (
+                      <div className="space-y-1 pt-1.5">
+                        <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
+                          <Store className="w-3 h-3" />
+                          <span>MSME Enterprises ({searchResults.msmes.length})</span>
+                        </div>
+                        {searchResults.msmes.map((msme) => (
+                          <button
+                            key={msme.id}
+                            type="button"
+                            onClick={() => handleSelectResult('msmes')}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                          >
+                            <div>
+                              <div className="font-semibold text-white group-hover:text-amber-300 transition-colors">
+                                {msme.name}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {msme.productCategory} • {msme.localProducts}
+                              </div>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono border border-slate-700">
+                              MSME
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Events Matches */}
+                    {searchResults.events.length > 0 && (
+                      <div className="space-y-1 pt-1.5">
+                        <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3" />
+                          <span>Events & Festivals ({searchResults.events.length})</span>
+                        </div>
+                        {searchResults.events.map((ev) => (
+                          <button
+                            key={ev.id}
+                            type="button"
+                            onClick={() => handleSelectResult('events')}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                          >
+                            <div>
+                              <div className="font-semibold text-white group-hover:text-purple-300 transition-colors">
+                                {ev.eventName}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {ev.date} • {ev.venue}
+                              </div>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-purple-300 font-mono border border-slate-700">
+                              EMS
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Tourists Matches */}
+                    {searchResults.tourists.length > 0 && (
+                      <div className="space-y-1 pt-1.5">
+                        <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
+                          <Users className="w-3 h-3" />
+                          <span>Inbound Tourists ({searchResults.tourists.length})</span>
+                        </div>
+                        {searchResults.tourists.map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => handleSelectResult('tourists')}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                          >
+                            <div>
+                              <div className="font-semibold text-white group-hover:text-rose-300 transition-colors">
+                                {t.name}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                ID: {t.touristId} • Visited: {t.destinationVisited}
+                              </div>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-rose-300 font-mono border border-slate-700">
+                              TAMS
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Real-time Weather Widget (Live Open-Meteo Telemetry) */}

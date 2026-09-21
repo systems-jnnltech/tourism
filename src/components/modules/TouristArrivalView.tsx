@@ -333,73 +333,205 @@ export const TouristArrivalView: React.FC = () => {
       });
   }, [tourists]);
 
-  // 2. DOT Form 1 Monthly Summary Matrix
-  const monthlySummaryMatrix = useMemo(() => [
-    { month: 'January 2026', domestic: 1240, foreign: 85, total: 1325, excursionist: 810, overnight: 515, alos: 1.8, spendingM: 1.88, dotStatus: 'Certified & Submitted' },
-    { month: 'February 2026', domestic: 1480, foreign: 110, total: 1590, excursionist: 940, overnight: 650, alos: 1.9, spendingM: 2.25, dotStatus: 'Certified & Submitted' },
-    { month: 'March 2026', domestic: 2100, foreign: 195, total: 2295, excursionist: 1320, overnight: 975, alos: 2.1, spendingM: 3.26, dotStatus: 'Certified & Submitted' },
-    { month: 'April 2026 (Semana Santa)', domestic: 4850, foreign: 340, total: 5190, excursionist: 2900, overnight: 2290, alos: 2.4, spendingM: 7.37, dotStatus: 'Certified & Submitted' },
-    { month: 'May 2026 (Summer Fest)', domestic: 5200, foreign: 410, total: 5610, excursionist: 3100, overnight: 2510, alos: 2.5, spendingM: 7.96, dotStatus: 'Certified & Submitted' },
-    { month: 'June 2026', domestic: 2800, foreign: 180, total: 2980, excursionist: 1800, overnight: 1180, alos: 2.0, spendingM: 4.23, dotStatus: 'Certified & Submitted' },
-    { month: 'July 2026', domestic: 1950, foreign: 140, total: 2090, excursionist: 1250, overnight: 840, alos: 1.9, spendingM: 2.97, dotStatus: 'Certified & Submitted' },
-    { month: 'August 2026', domestic: 2300, foreign: 175, total: 2475, excursionist: 1480, overnight: 995, alos: 2.0, spendingM: 3.51, dotStatus: 'Certified & Submitted' },
-    { month: 'September 2026 (Current)', domestic: 2600, foreign: 210, total: 2810, excursionist: 1650, overnight: 1160, alos: 2.2, spendingM: 3.99, dotStatus: 'Draft In-Progress' },
-  ], []);
+  // 2. DOT Form 1 Monthly Summary Matrix (Dynamically computed from empirical tourist registrations)
+  const monthlySummaryMatrix = useMemo(() => {
+    if (!tourists || tourists.length === 0) return [];
 
-  // 3. Local vs Foreign Detailed Origin Distribution
-  const originProvinces = useMemo(() => [
-    { region: 'Sarangani Province & GenSan (Host Corridor)', share: 44, color: '#059669' },
-    { region: 'South Cotabato & Koronadal City', share: 22, color: '#10b981' },
-    { region: 'Davao Region (Davao City, Digos)', share: 18, color: '#6366f1' },
-    { region: 'Cotabato Province & Sultan Kudarat', share: 9, color: '#0ea5e9' },
-    { region: 'NCR & Luzon Inbound', share: 5, color: '#f59e0b' },
-    { region: 'Visayas & Other Regions', share: 2, color: '#8b5cf6' },
-  ], []);
+    const monthMap = new Map<
+      string,
+      {
+        monthKey: string;
+        month: string;
+        domestic: number;
+        foreign: number;
+        total: number;
+        excursionist: number;
+        overnight: number;
+        totalDaysStayed: number;
+        totalSpending: number;
+        dotStatus: string;
+      }
+    >();
 
-  const foreignSourceMarkets = useMemo(() => [
-    { country: 'United States', share: 36, pax: 340 },
-    { country: 'Australia', share: 18, pax: 170 },
-    { country: 'Japan', share: 15, pax: 140 },
-    { country: 'Canada', share: 12, pax: 115 },
-    { country: 'Germany & EU', share: 11, pax: 105 },
-    { country: 'Singapore & ASEAN', share: 8, pax: 75 },
-  ], []);
+    tourists.forEach((t) => {
+      const monthKey = t.dateOfVisit ? t.dateOfVisit.substring(0, 7) : '2026-09';
+      if (!monthMap.has(monthKey)) {
+        const [yr, mo] = monthKey.split('-').map(Number);
+        const monthLabel = yr && mo
+          ? new Date(yr, mo - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+          : monthKey;
 
-  // 4. Peak Season & Festival Surge Analytics
-  const peakSeasonSurges = [
-    {
-      season: 'Slang Festival (November Flagship)',
-      period: 'Nov 12 - Nov 18',
-      expectedPax: 18500,
-      dailyPeak: 4200,
-      riskLevel: 'High Carrying Capacity Alert',
-      actionPlan: 'Enforce pre-registration at Kalon Barak & Lamlifew; deploy auxiliary tourism marshals.',
-    },
-    {
-      season: 'Holy Week / Lenten Pilgrimage',
-      period: 'Maundy Thursday - Easter Sunday',
-      expectedPax: 14200,
-      dailyPeak: 3800,
-      riskLevel: 'Traffic & Trail Congestion',
-      actionPlan: 'One-way vehicular traffic scheme along Upper Biangan mountain road; water stations.',
-    },
-    {
-      season: 'Summer Eco-Campouts (April-May)',
-      period: 'Apr 1 - May 31',
-      expectedPax: 28000,
-      dailyPeak: 1600,
-      riskLevel: 'Moderate Sustained Load',
-      actionPlan: 'Strict enforcement of campfire permits and solid waste monitoring with MENRO.',
-    },
-    {
-      season: 'Christmas & New Year Holidays',
-      period: 'Dec 20 - Jan 3',
-      expectedPax: 16000,
-      dailyPeak: 2400,
-      riskLevel: 'Family Leisure Surge',
-      actionPlan: 'Coordinate resort safety inspections with BFP and Municipal Police (MPS).',
-    },
-  ];
+        monthMap.set(monthKey, {
+          monthKey,
+          month: monthLabel,
+          domestic: 0,
+          foreign: 0,
+          total: 0,
+          excursionist: 0,
+          overnight: 0,
+          totalDaysStayed: 0,
+          totalSpending: 0,
+          dotStatus: 'Official Return (Live Verified)',
+        });
+      }
+
+      const row = monthMap.get(monthKey)!;
+      row.total += 1;
+      if (t.isForeign) {
+        row.foreign += 1;
+      } else {
+        row.domestic += 1;
+      }
+
+      const days = Number(t.numberOfDaysStayed) || 1;
+      row.totalDaysStayed += days;
+      if (days <= 1) {
+        row.excursionist += 1;
+      } else {
+        row.overnight += 1;
+      }
+
+      row.totalSpending += Number(t.touristSpending) || 0;
+    });
+
+    return Array.from(monthMap.values())
+      .sort((a, b) => b.monthKey.localeCompare(a.monthKey))
+      .map((row) => ({
+        month: row.month,
+        domestic: row.domestic,
+        foreign: row.foreign,
+        total: row.total,
+        excursionist: row.excursionist,
+        overnight: row.overnight,
+        alos: row.total > 0 ? Number((row.totalDaysStayed / row.total).toFixed(1)) : 1.0,
+        spendingM: Number((row.totalSpending / 1000000).toFixed(2)),
+        dotStatus: row.dotStatus,
+      }));
+  }, [tourists]);
+
+  // 3. Local vs Foreign Detailed Origin Distribution (Empirical calculation from registry)
+  const originProvinces = useMemo(() => {
+    const domesticTourists = tourists.filter((t) => !t.isForeign);
+    if (domesticTourists.length === 0) return [];
+
+    const regionMap = new Map<string, number>();
+    domesticTourists.forEach((t) => {
+      const addr = (t.address || '').toLowerCase();
+      let key = 'Sarangani Province & GenSan (Host Corridor)';
+      if (addr.includes('south cotabato') || addr.includes('koronadal') || addr.includes('polomolok') || addr.includes('surallah')) {
+        key = 'South Cotabato & Koronadal City';
+      } else if (addr.includes('davao') || addr.includes('digos') || addr.includes('tagum') || addr.includes('panabo')) {
+        key = 'Davao Region (Davao City, Digos)';
+      } else if (addr.includes('cotabato') || addr.includes('sultan kudarat') || addr.includes('tacurong') || addr.includes('kidapawan')) {
+        key = 'Cotabato Province & Sultan Kudarat';
+      } else if (addr.includes('manila') || addr.includes('quezon') || addr.includes('luzon') || addr.includes('ncr') || addr.includes('makati')) {
+        key = 'NCR & Luzon Inbound';
+      } else if (addr.includes('cebu') || addr.includes('bohol') || addr.includes('visayas') || addr.includes('iloilo')) {
+        key = 'Visayas & Other Regions';
+      } else if (t.address && t.address.trim() !== '') {
+        key = t.address.trim();
+      }
+      regionMap.set(key, (regionMap.get(key) || 0) + 1);
+    });
+
+    const colors = ['#059669', '#10b981', '#6366f1', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
+    const totalDomestic = domesticTourists.length;
+
+    return Array.from(regionMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([region, count], idx) => ({
+        region,
+        share: Math.round((count / totalDomestic) * 100),
+        count,
+        color: colors[idx % colors.length],
+      }));
+  }, [tourists]);
+
+  const foreignSourceMarkets = useMemo(() => {
+    const foreignTourists = tourists.filter((t) => t.isForeign);
+    if (foreignTourists.length === 0) return [];
+
+    const countryMap = new Map<string, number>();
+    foreignTourists.forEach((t) => {
+      const country = t.nationality || 'Foreign Traveler';
+      countryMap.set(country, (countryMap.get(country) || 0) + 1);
+    });
+
+    const totalForeign = foreignTourists.length;
+
+    return Array.from(countryMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([country, pax]) => ({
+        country,
+        share: Math.round((pax / totalForeign) * 100),
+        pax,
+      }));
+  }, [tourists]);
+
+  // 4. Peak Season & Festival Surge Analytics (Empirical surveillance from real visitor logs)
+  const peakSeasonSurges = useMemo(() => {
+    const seasons = [
+      {
+        season: 'Slang Festival (November Flagship)',
+        period: 'Nov 12 - Nov 18',
+        filterMonths: ['-11-'],
+        actionPlan: 'Enforce pre-registration at Kalon Barak & Lamlifew; deploy auxiliary tourism marshals.',
+      },
+      {
+        season: 'Holy Week / Lenten Pilgrimage',
+        period: 'Maundy Thursday - Easter Sunday (Mar/Apr)',
+        filterMonths: ['-03-', '-04-'],
+        actionPlan: 'One-way vehicular traffic scheme along Upper Biangan mountain road; water stations.',
+      },
+      {
+        season: 'Summer Eco-Campouts (April-May)',
+        period: 'Apr 1 - May 31',
+        filterMonths: ['-04-', '-05-'],
+        actionPlan: 'Strict enforcement of campfire permits and solid waste monitoring with MENRO.',
+      },
+      {
+        season: 'Christmas & New Year Holidays',
+        period: 'Dec 20 - Jan 3',
+        filterMonths: ['-12-', '-01-'],
+        actionPlan: 'Coordinate resort safety inspections with BFP and Municipal Police (MPS).',
+      },
+    ];
+
+    const totalCapacity = destinations.reduce((sum, d) => sum + (d.carryingCapacityDaily || 0), 0) || 1200;
+
+    return seasons.map((s) => {
+      const matchingTourists = tourists.filter((t) =>
+        s.filterMonths.some((m) => t.dateOfVisit?.includes(m))
+      );
+      const recordedPax = matchingTourists.length;
+
+      const dayMap: Record<string, number> = {};
+      matchingTourists.forEach((t) => {
+        dayMap[t.dateOfVisit] = (dayMap[t.dateOfVisit] || 0) + 1;
+      });
+      const dailyPeak = Object.values(dayMap).length > 0 ? Math.max(...Object.values(dayMap)) : 0;
+
+      let riskLevel = 'Normal Baseline (No Surges)';
+      if (dailyPeak > totalCapacity * 0.85) {
+        riskLevel = 'Critical Surge Capacity Alert';
+      } else if (dailyPeak > totalCapacity * 0.6) {
+        riskLevel = 'Moderate Load Surveillance';
+      } else if (recordedPax > 0) {
+        riskLevel = 'Under Carrying Capacity';
+      }
+
+      return {
+        season: s.season,
+        period: s.period,
+        recordedPax,
+        dailyPeak,
+        riskLevel,
+        actionPlan: s.actionPlan,
+      };
+    });
+  }, [tourists, destinations]);
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
@@ -879,51 +1011,61 @@ export const TouristArrivalView: React.FC = () => {
           </div>
 
           <div id="daily-tourist-arrival-table" className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden print:border-none print:shadow-none">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3">Calendar Date</th>
-                    <th className="px-4 py-3 text-center">Domestic</th>
-                    <th className="px-4 py-3 text-center">Foreign</th>
-                    <th className="px-4 py-3 text-center font-black text-slate-900">Total Arrivals</th>
-                    <th className="px-4 py-3">Direct Injected Spending</th>
-                    <th className="px-4 py-3">Dominant Visited Destination</th>
-                    <th className="px-4 py-3 text-right">Corridor Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dailyReportData.map((day, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5 font-bold text-slate-900 flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-700" />
-                        <span>{day.date}</span>
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-medium text-emerald-800">
-                        {day.domestic.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-medium text-blue-800">
-                        {day.foreign.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-black text-slate-900 text-sm">
-                        {day.total.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-slate-800">
-                        ₱{day.spending.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-700 font-medium">
-                        {day.mostVisited}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          Clear / Normal Flow
-                        </span>
-                      </td>
+            {dailyReportData.length === 0 ? (
+              <div className="p-10 text-center bg-slate-50/50">
+                <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                <h4 className="text-sm font-bold text-slate-700">No Daily Manifest Entries Recorded</h4>
+                <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
+                  Daily tourist arrival tracking across municipal checkpoints and welcome centers will appear here as entries are registered.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Calendar Date</th>
+                      <th className="px-4 py-3 text-center">Domestic</th>
+                      <th className="px-4 py-3 text-center">Foreign</th>
+                      <th className="px-4 py-3 text-center font-black text-slate-900">Total Arrivals</th>
+                      <th className="px-4 py-3">Direct Injected Spending</th>
+                      <th className="px-4 py-3">Dominant Visited Destination</th>
+                      <th className="px-4 py-3 text-right">Corridor Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {dailyReportData.map((day, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-4 py-3.5 font-bold text-slate-900 flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>{day.date}</span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-medium text-emerald-800">
+                          {day.domestic.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-medium text-blue-800">
+                          {day.foreign.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-black text-slate-900 text-sm">
+                          {day.total.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-slate-800">
+                          ₱{day.spending.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-700 font-medium">
+                          {day.mostVisited}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            Clear / Normal Flow
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -957,48 +1099,58 @@ export const TouristArrivalView: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3">Reporting Month</th>
-                    <th className="px-3 py-3 text-center">Domestic</th>
-                    <th className="px-3 py-3 text-center">Foreign</th>
-                    <th className="px-3 py-3 text-center font-black text-slate-900">Total Volume</th>
-                    <th className="px-3 py-3 text-center">Excursionists (Same-Day)</th>
-                    <th className="px-3 py-3 text-center">Overnight Guests</th>
-                    <th className="px-3 py-3 text-center">Avg Length of Stay (ALOS)</th>
-                    <th className="px-4 py-3 text-right">Estimated Receipts</th>
-                    <th className="px-4 py-3 text-right">DOT Filing Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {monthlySummaryMatrix.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5 font-bold text-slate-900">{row.month}</td>
-                      <td className="px-3 py-3.5 text-center font-medium text-emerald-800">{row.domestic.toLocaleString()}</td>
-                      <td className="px-3 py-3.5 text-center font-medium text-blue-800">{row.foreign.toLocaleString()}</td>
-                      <td className="px-3 py-3.5 text-center font-black text-slate-900 text-sm">{row.total.toLocaleString()}</td>
-                      <td className="px-3 py-3.5 text-center text-slate-600">{row.excursionist.toLocaleString()}</td>
-                      <td className="px-3 py-3.5 text-center font-semibold text-indigo-700">{row.overnight.toLocaleString()}</td>
-                      <td className="px-3 py-3.5 text-center font-mono font-medium text-slate-800">{row.alos} days</td>
-                      <td className="px-4 py-3.5 text-right font-bold text-emerald-800">₱{row.spendingM.toFixed(2)}M</td>
-                      <td className="px-4 py-3.5 text-right">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            row.dotStatus.includes('Certified')
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {row.dotStatus}
-                        </span>
-                      </td>
+            {monthlySummaryMatrix.length === 0 ? (
+              <div className="p-10 text-center bg-slate-50/50">
+                <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                <h4 className="text-sm font-bold text-slate-700">No Monthly DOT Form 1 Return Logs Recorded</h4>
+                <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
+                  As inbound tourists and excursionists are registered in the Tourist Inbound Registry, certified monthly statistical compilations will automatically calculate and appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Reporting Month</th>
+                      <th className="px-3 py-3 text-center">Domestic</th>
+                      <th className="px-3 py-3 text-center">Foreign</th>
+                      <th className="px-3 py-3 text-center font-black text-slate-900">Total Volume</th>
+                      <th className="px-3 py-3 text-center">Excursionists (Same-Day)</th>
+                      <th className="px-3 py-3 text-center">Overnight Guests</th>
+                      <th className="px-3 py-3 text-center">Avg Length of Stay (ALOS)</th>
+                      <th className="px-4 py-3 text-right">Estimated Receipts</th>
+                      <th className="px-4 py-3 text-right">DOT Filing Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {monthlySummaryMatrix.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-4 py-3.5 font-bold text-slate-900">{row.month}</td>
+                        <td className="px-3 py-3.5 text-center font-medium text-emerald-800">{row.domestic.toLocaleString()}</td>
+                        <td className="px-3 py-3.5 text-center font-medium text-blue-800">{row.foreign.toLocaleString()}</td>
+                        <td className="px-3 py-3.5 text-center font-black text-slate-900 text-sm">{row.total.toLocaleString()}</td>
+                        <td className="px-3 py-3.5 text-center text-slate-600">{row.excursionist.toLocaleString()}</td>
+                        <td className="px-3 py-3.5 text-center font-semibold text-indigo-700">{row.overnight.toLocaleString()}</td>
+                        <td className="px-3 py-3.5 text-center font-mono font-medium text-slate-800">{row.alos} days</td>
+                        <td className="px-4 py-3.5 text-right font-bold text-emerald-800">₱{row.spendingM.toFixed(2)}M</td>
+                        <td className="px-4 py-3.5 text-right">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              row.dotStatus.includes('Certified')
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {row.dotStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <div className="bg-slate-50 p-4 border-t border-slate-200 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-3">
               <span>
@@ -1029,42 +1181,54 @@ export const TouristArrivalView: React.FC = () => {
                   Distribution of Filipino domestic tourists traveling across Sarangani mountain corridors
                 </p>
 
-                <div className="h-56 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={originProvinces}
-                        dataKey="share"
-                        nameKey="region"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        innerRadius={50}
-                        paddingAngle={3}
-                      >
-                        {originProvinces.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
-                        formatter={(value: any) => [`${value}% of Domestic Arrivals`, 'Share']}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="space-y-2 mt-2">
-                  {originProvinces.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs text-slate-600">
-                      <span className="flex items-center gap-2 truncate">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }}></span>
-                        <span className="truncate">{p.region}</span>
-                      </span>
-                      <span className="font-bold text-slate-900">{p.share}%</span>
+                {originProvinces.length === 0 ? (
+                  <div className="py-12 px-4 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                    <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <h4 className="text-xs font-bold text-slate-700">No Domestic Arrivals Recorded</h4>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto mt-0.5">
+                      Regional feeder breakdown and market shares will compute automatically once domestic arrivals are registered in the registry.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="h-56 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={originProvinces}
+                            dataKey="share"
+                            nameKey="region"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            innerRadius={50}
+                            paddingAngle={3}
+                          >
+                            {originProvinces.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                            formatter={(value: any) => [`${value}% of Domestic Arrivals`, 'Share']}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="space-y-2 mt-2">
+                      {originProvinces.map((p, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs text-slate-600">
+                          <span className="flex items-center gap-2 truncate">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }}></span>
+                            <span className="truncate">{p.region}</span>
+                          </span>
+                          <span className="font-bold text-slate-900">{p.share}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
@@ -1083,21 +1247,31 @@ export const TouristArrivalView: React.FC = () => {
                   International and Balikbayan visitor demographics visiting Blaan heritage sites
                 </p>
 
-                <div className="space-y-3.5">
-                  {foreignSourceMarkets.map((m, i) => (
-                    <div key={i} className="space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-800">{m.country}</span>
-                        <span className="font-bold text-blue-700">
-                          {m.share}% ({m.pax} visitors)
-                        </span>
+                {foreignSourceMarkets.length === 0 ? (
+                  <div className="py-12 px-4 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                    <Globe2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <h4 className="text-xs font-bold text-slate-700">No Foreign Arrivals Recorded</h4>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto mt-0.5">
+                      International inbound country breakdowns will populate automatically when foreign visitor entries are logged in the registry.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    {foreignSourceMarkets.map((m, i) => (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-slate-800">{m.country}</span>
+                          <span className="font-bold text-blue-700">
+                            {m.share}% ({m.pax} visitors)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="bg-blue-600 h-full rounded-full" style={{ width: `${Math.min(100, m.share * 2.5)}%` }}></div>
+                        </div>
                       </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="bg-blue-600 h-full rounded-full" style={{ width: `${m.share * 2.5}%` }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="mt-5 p-3.5 bg-blue-50/70 rounded-lg border border-blue-200 text-xs text-blue-900">
@@ -1113,14 +1287,19 @@ export const TouristArrivalView: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'peak_season' && (
         <div className="space-y-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-amber-600" />
-              Peak Season & Surge Capacity Management Plan
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Predictive models and municipal ranger action protocols for major holiday influx periods
-            </p>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-amber-600" />
+                Peak Season & Surge Capacity Management Plan
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Surveillance against municipal carrying capacity benchmarks and ranger deployment protocols
+              </p>
+            </div>
+            <div className="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 self-start sm:self-center">
+              Aggregate Destination Daily Capacity: <strong className="text-slate-800">{destinations.reduce((s, d) => s + (d.carryingCapacityDaily || 0), 0) || 1200} pax/day</strong>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1134,19 +1313,27 @@ export const TouristArrivalView: React.FC = () => {
                       <span>{surge.period}</span>
                     </div>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    surge.riskLevel.includes('Critical')
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : surge.riskLevel.includes('Moderate')
+                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                      : surge.riskLevel.includes('Under')
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}>
                     {surge.riskLevel}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
                   <div>
-                    <span className="text-slate-500 text-[11px]">Expected Period Volume</span>
-                    <div className="font-black text-slate-900 text-base mt-0.5">{surge.expectedPax.toLocaleString()} pax</div>
+                    <span className="text-slate-500 text-[11px]">Recorded Period Volume</span>
+                    <div className="font-black text-slate-900 text-base mt-0.5">{surge.recordedPax.toLocaleString()} pax</div>
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[11px]">Peak Single-Day Load</span>
-                    <div className="font-black text-rose-600 text-base mt-0.5">{surge.dailyPeak.toLocaleString()} pax</div>
+                    <span className="text-slate-500 text-[11px]">Observed Single-Day Peak</span>
+                    <div className={`font-black text-base mt-0.5 ${surge.dailyPeak > 0 ? 'text-rose-600' : 'text-slate-700'}`}>{surge.dailyPeak.toLocaleString()} pax</div>
                   </div>
                 </div>
 

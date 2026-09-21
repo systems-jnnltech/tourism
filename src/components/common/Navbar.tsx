@@ -16,7 +16,9 @@ import {
   CloudRain,
   CloudLightning,
   LogOut,
-  Users
+  Users,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 
@@ -30,6 +32,8 @@ interface NavbarProps {
   onGlobalSearch?: (term: string) => void;
   onToggleMobileMenu?: () => void;
   mobileMenuOpen?: boolean;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -42,6 +46,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onGlobalSearch,
   onToggleMobileMenu,
   mobileMenuOpen = false,
+  isSidebarCollapsed = false,
+  onToggleSidebar,
 }) => {
   const {
     currentUser,
@@ -105,45 +111,69 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Main Navbar */}
       <div className="px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
         {/* Left: Branding & Seal */}
-        <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
           {/* Mobile Menu Toggle Button */}
           {onToggleMobileMenu && (
             <button
               id="mobile-menu-toggle-btn"
               type="button"
               onClick={onToggleMobileMenu}
-              className="md:hidden p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              className="md:hidden p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               aria-label="Toggle navigation sidebar"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
             </button>
           )}
 
-          {/* Official Dual Logos: LGU Malungon Seal & Tourism Logo */}
-          <div className="flex items-center space-x-1.5 shrink-0">
-            <img
-              src="/logo/LGU_LOGO1.png"
-              alt="Official Seal of the Municipality of Malungon"
-              className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5"
-            />
-            <img
-              src="/logo/TourismLogo.png"
-              alt="Malungon Municipal Tourism Office Logo"
-              className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 hidden xs:block"
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-sm sm:text-base leading-tight tracking-tight text-white flex items-center gap-1.5">
-                MTODMS
-                <span className="text-[10px] font-semibold bg-emerald-600/30 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30 hidden sm:inline">
-                  v2.6 LGU
-                </span>
-              </h1>
+          {/* Desktop Sidebar Toggle Button */}
+          {onToggleSidebar && (
+            <button
+              id="desktop-sidebar-toggle-btn"
+              type="button"
+              onClick={onToggleSidebar}
+              className="hidden md:flex p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              title={isSidebarCollapsed ? 'Expand Navigation Sidebar (Ctrl+B)' : 'Collapse Navigation Sidebar (Ctrl+B)'}
+              aria-label="Toggle navigation sidebar"
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="w-5 h-5 text-emerald-400 hover:text-emerald-300" />
+              ) : (
+                <PanelLeftClose className="w-5 h-5 text-slate-400 hover:text-emerald-300" />
+              )}
+            </button>
+          )}
+
+          {/* Official Dual Logos: LGU Malungon Seal x Tourism Logo */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-800/80 px-2 py-1 rounded-xl border border-slate-700/60 shadow-xs">
+              <img
+                src="/logo/LGU_LOGO1.png"
+                alt="Official Seal of the Municipality of Malungon"
+                className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 hover:scale-105 transition-transform shrink-0"
+                title="Official Seal of the Municipality of Malungon"
+              />
+              <span className="text-emerald-400/80 font-black text-xs select-none">×</span>
+              <img
+                src="/logo/TourismLogo.png"
+                alt="Malungon Municipal Tourism Office Logo"
+                className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 hover:scale-105 transition-transform shrink-0"
+                title="Malungon Municipal Tourism Office Logo"
+              />
             </div>
-            <p className="text-[11px] text-slate-300 hidden sm:block">
-              Municipal Tourism Office Database Management System
-            </p>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-sm sm:text-base leading-tight tracking-tight text-white flex items-center gap-1.5">
+                  MTODMS
+                  <span className="text-[10px] font-semibold bg-emerald-600/30 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                    v2.6 LGU
+                  </span>
+                </h1>
+              </div>
+              <p className="text-[11px] text-slate-300 hidden sm:block truncate max-w-[280px] lg:max-w-none">
+                Municipal Tourism Office Database Management System
+              </p>
+            </div>
           </div>
         </div>
 
@@ -218,49 +248,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Audit Trail (Strict RBAC: Admin & Tourism Officer) */}
-          {canAccessAudit && (
-            <button
-              onClick={onOpenAudit}
-              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5"
-              title="System Audit Trail"
-            >
-              <History className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">Audit Log</span>
-            </button>
-          )}
-
-          {/* Backup & Restore (Strict RBAC: Admin only) */}
-          {canAccessBackup && (
-            <button
-              onClick={onOpenBackup}
-              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5"
-              title="Database Backup & Restore"
-            >
-              <Database className="w-3.5 h-3.5 text-purple-400" />
-              <span className="hidden lg:inline">Backup</span>
-            </button>
-          )}
-
-          {/* Workflow Manual & SOP Guide */}
-          {onOpenManual && (
-            <button
-              id="btn-open-workflow-manual"
-              onClick={onOpenManual}
-              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 hover:text-white rounded-lg text-xs font-semibold border border-emerald-700/60 transition-colors flex items-center space-x-1.5 shadow-xs"
-              title="Official Workflow Manual & SOP Guide"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden md:inline">SOP Manual</span>
-            </button>
-          )}
-
           {/* Dark / Light Mode Toggle Button */}
           <button
             id="theme-toggle-btn"
             type="button"
             onClick={toggleTheme}
-            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center space-x-1.5 shadow-xs ${
+            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer ${
               theme === 'dark'
                 ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700 hover:border-amber-400/50'
                 : 'bg-slate-800 hover:bg-slate-700 text-indigo-200 border-slate-700 hover:border-indigo-400/50'
@@ -321,19 +314,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="text-[11px] text-emerald-200/80 mt-0.5 truncate">{currentUser?.department}</div>
                 </div>
 
-                {/* Admin User Approvals Button */}
-                {canManageUsers && onOpenUserManagement && (
-                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
+                {/* Administrative & Utility Actions (Relocated from Top Bar) */}
+                <div className="p-2 border-b border-slate-100 dark:border-slate-800 space-y-1 bg-slate-50/50 dark:bg-slate-950/40">
+                  {canManageUsers && onOpenUserManagement && (
                     <button
                       type="button"
                       onClick={() => {
                         setRoleDropdownOpen(false);
                         onOpenUserManagement();
                       }}
-                      className="w-full px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                      className="w-full px-2.5 py-2 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer border border-transparent hover:border-indigo-200 dark:hover:border-indigo-800"
                     >
                       <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <Users className="w-4 h-4 text-indigo-500" />
                         <span>User Directory & Approvals</span>
                       </div>
                       {pendingUsersCount > 0 && (
@@ -342,8 +335,50 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </span>
                       )}
                     </button>
-                  </div>
-                )}
+                  )}
+
+                  {canAccessAudit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        onOpenAudit();
+                      }}
+                      className="w-full px-2.5 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-700 dark:text-slate-200 hover:text-amber-800 dark:hover:text-amber-300 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer border border-transparent hover:border-amber-200 dark:hover:border-amber-900"
+                    >
+                      <History className="w-4 h-4 text-amber-500" />
+                      <span>System Audit Trail</span>
+                    </button>
+                  )}
+
+                  {canAccessBackup && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        onOpenBackup();
+                      }}
+                      className="w-full px-2.5 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-800 dark:hover:text-purple-300 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer border border-transparent hover:border-purple-200 dark:hover:border-purple-900"
+                    >
+                      <Database className="w-4 h-4 text-purple-500" />
+                      <span>Database Backup & Restore</span>
+                    </button>
+                  )}
+
+                  {onOpenManual && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRoleDropdownOpen(false);
+                        onOpenManual();
+                      }}
+                      className="w-full px-2.5 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 hover:text-emerald-800 dark:hover:text-emerald-300 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900"
+                    >
+                      <BookOpen className="w-4 h-4 text-emerald-500" />
+                      <span>SOP & Operational Workflow Manual</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* Log Out Button */}
                 <div className="p-2 bg-slate-50 dark:bg-slate-950/80">

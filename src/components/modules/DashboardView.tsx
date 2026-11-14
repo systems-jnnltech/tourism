@@ -50,6 +50,7 @@ import {
 import { useTourism } from '../../context/TourismContext';
 import { TourismDestination } from '../../types';
 import { printElement } from '../../utils/printEngine';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface DashboardViewProps {
   onOpenGIS?: (destId?: string) => void;
@@ -80,6 +81,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
   const [briefModalOpen, setBriefModalOpen] = useState(false);
+
+  useEscapeKey(briefModalOpen, () => setBriefModalOpen(false));
 
   // Filter tourists based on selected timeframe
   const filteredTourists = useMemo(() => {
@@ -469,28 +472,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
       {/* Primary KPI Matrix (5 Core Executive Indicator Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* KPI 1: Inbound Tourist Volume */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveModule('tourists')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group flex flex-col justify-between text-left w-full"
         >
-          <div>
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Inbound Tourists</span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Users className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5">
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 {totalTouristsCount.toLocaleString()}
               </div>
-              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between tabular-nums">
                 <span className="text-indigo-600 font-semibold">{domesticRatio}% Domestic</span>
                 <span className="text-sky-600 font-semibold">{foreignRatio}% Foreign</span>
               </div>
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 w-full">
             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
               <div className="bg-indigo-600 h-full" style={{ width: `${domesticRatio}%` }}></div>
               <div className="bg-sky-500 h-full" style={{ width: `${foreignRatio}%` }}></div>
@@ -502,92 +506,95 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
               <span>Filter: {timeframe}</span>
             </div>
           </div>
-        </div>
+        </button>
 
         {/* KPI 2: Gross Economic Footprint & Direct Receipts */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveModule('tourists')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-emerald-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group flex flex-col justify-between text-left w-full"
         >
-          <div>
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tourism Receipts</span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5">
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 ₱{(totalDirectReceipts / 1000000).toFixed(2)}M
               </div>
-              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between tabular-nums">
                 <span>Total Footprint:</span>
                 <span className="font-bold text-emerald-700">₱{(totalEconomicFootprint / 1000000).toFixed(2)}M</span>
               </div>
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 w-full tabular-nums">
             <span className="font-medium">Avg Spend: ₱{averageVisitorSpend.toLocaleString()}</span>
             <span className="text-emerald-600 font-semibold">1.84x Multiplier</span>
           </div>
-        </div>
+        </button>
 
         {/* KPI 3: Registered Enterprises & DOT Accreditation */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveModule('establishments')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-sky-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-sky-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group flex flex-col justify-between text-left w-full"
         >
-          <div>
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">DOT Accreditation</span>
-              <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Building2 className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5">
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 {accreditationRate}% Rate
               </div>
-              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between tabular-nums">
                 <span className="text-sky-700 font-semibold">{accreditedEnterprises} Accredited</span>
                 <span className="font-medium text-slate-600">{totalEnterprises} Total</span>
               </div>
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 w-full">
             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
               <div className="bg-sky-600 h-full rounded-full" style={{ width: `${accreditationRate}%` }}></div>
             </div>
-            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 tabular-nums">
               <span className="text-amber-600 font-medium">{pendingInspections} In Review / Renewal</span>
               <span className="text-slate-400">RA 9593</span>
             </div>
           </div>
-        </div>
+        </button>
 
         {/* KPI 4: Aggregate Carrying Capacity Load */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveModule('destinations')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-teal-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-teal-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group flex flex-col justify-between text-left w-full"
         >
-          <div>
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Capacity Load</span>
-              <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Mountain className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5">
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 {aggregateCapacityLoad}% Utilized
               </div>
-              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between tabular-nums">
                 <span className="font-semibold text-slate-700">{currentTotalVisitorsToday} Today</span>
                 <span>Max: {totalDailyCapacity} pax</span>
               </div>
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 w-full">
             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
@@ -596,40 +603,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                 style={{ width: `${Math.min(100, aggregateCapacityLoad)}%` }}
               ></div>
             </div>
-            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 tabular-nums">
               <span className="text-teal-700 font-medium">{destinations.length} Active Eco-Sites</span>
               <span>{Math.max(0, totalDailyCapacity - currentTotalVisitorsToday)} slots left</span>
             </div>
           </div>
-        </div>
+        </button>
 
         {/* KPI 5: Regulatory Compliance & Ordinance Governance */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveModule('policy_regulation')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-rose-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-rose-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group flex flex-col justify-between text-left w-full"
         >
-          <div>
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Code Compliance</span>
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <ShieldCheck className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5">
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 {regulatoryMattersTotal} Matters
               </div>
-              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between tabular-nums">
                 <span className="text-rose-600 font-semibold">{pendingNoticesCount} Violations</span>
                 <span className="text-amber-600 font-semibold">{activeComplaintsCount} Inquiries</span>
               </div>
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 w-full tabular-nums">
             <span className="font-semibold text-emerald-600">{resolutionRate}% Resolution</span>
             <span className="text-slate-400">Ord. 2024-08</span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Row 2: Analytics Charts Section */}
@@ -676,7 +684,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
             <ResponsiveContainer width="100%" height="100%">
               {analyticsMetric === 'arrivals' ? (
                 <BarChart data={monthlyAnalyticsData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.22)" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip
@@ -691,7 +699,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                 </BarChart>
               ) : (
                 <LineChart data={monthlyAnalyticsData} margin={{ top: 10, right: 15, left: -15, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.22)" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip
@@ -901,18 +909,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
               {weather.iconType === 'thunderstorm' ? (
                 <CloudLightning className="w-7 h-7 text-purple-400 animate-pulse" />
               ) : weather.iconType === 'rain' ? (
-                <CloudRain className="w-7 h-7 text-sky-400 animate-pulse" />
+                <CloudRain className="w-7 h-7 text-sky-400" />
               ) : weather.iconType === 'clear' ? (
-                <Sun className="w-7 h-7 text-amber-400 animate-pulse" />
+                <Sun className="w-7 h-7 text-amber-400" />
               ) : weather.iconType === 'overcast' ? (
-                <Cloud className="w-7 h-7 text-slate-300 animate-pulse" />
+                <Cloud className="w-7 h-7 text-slate-300" />
               ) : (
-                <CloudSun className="w-7 h-7 text-amber-400 animate-pulse" />
+                <CloudSun className="w-7 h-7 text-amber-400" />
               )}
             </div>
 
             <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-black tracking-tight">{weather.temperature}°C</span>
+              <span className="text-4xl font-extrabold tracking-tight tabular-nums">{weather.temperature}°C</span>
               <span className="text-indigo-200 text-sm font-semibold">{weather.condition}</span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
@@ -1224,7 +1232,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
 
       {/* Official Executive Briefing Printable Modal */}
       {briefModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Official Executive Tourism Summary Brief"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setBriefModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+        >
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full border border-slate-200 my-auto max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header (Sticky / Shrink-0) */}
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0 bg-slate-50/80">
@@ -1240,9 +1256,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenGIS, onOpenN
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setBriefModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors"
-                title="Close modal"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+                title="Close modal (Esc)"
+                aria-label="Close executive brief modal"
               >
                 <X className="w-5 h-5" />
               </button>

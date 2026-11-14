@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { History, X, Search, Filter, Download, UserCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface AuditTrailModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState<string>('ALL');
   const [selectedModule, setSelectedModule] = useState<string>('ALL');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -69,7 +72,15 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="MTODMS Central Audit Trail and Activity Log"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+    >
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
         {/* Modal Header */}
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
@@ -88,8 +99,10 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white rounded-lg p-1.5 transition-colors hover:bg-slate-800"
+            aria-label="Close audit trail modal"
+            className="text-slate-400 hover:text-white rounded-lg p-1.5 transition-colors hover:bg-slate-800 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

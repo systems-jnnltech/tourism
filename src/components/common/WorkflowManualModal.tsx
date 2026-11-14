@@ -23,6 +23,7 @@ import {
   Info
 } from 'lucide-react';
 import { printElement } from '../../utils/printEngine';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface WorkflowManualModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ interface WorkflowManualModalProps {
 export const WorkflowManualModal: React.FC<WorkflowManualModalProps> = ({ isOpen, onClose }) => {
   const [activeSection, setActiveSection] = useState<string>('overview');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -57,7 +60,15 @@ export const WorkflowManualModal: React.FC<WorkflowManualModalProps> = ({ isOpen
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="MTODMS Operational Workflow Manual"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs"
+    >
       <div className="bg-white w-full max-w-5xl h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
@@ -81,16 +92,19 @@ export const WorkflowManualModal: React.FC<WorkflowManualModalProps> = ({ isOpen
 
           <div className="flex items-center space-x-2">
             <button
+              type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-emerald-700/60 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-emerald-500/40"
+              className="px-3 py-1.5 bg-emerald-700/60 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-emerald-500/40 cursor-pointer"
               title="Print or Save as PDF"
             >
               <Printer className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Print / Export</span>
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Close operational manual modal"
+              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

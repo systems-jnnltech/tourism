@@ -1003,7 +1003,7 @@ export const EstablishmentView: React.FC = () => {
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={jobsByCategory} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.22)" />
                     <XAxis dataKey="category" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip

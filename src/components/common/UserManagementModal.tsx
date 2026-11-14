@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { UserProfile, UserRole } from '../../types';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface UserManagementModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [activeTab, setActiveTab] = useState<'pending' | 'directory'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleOverrides, setRoleOverrides] = useState<Record<string, UserRole>>({});
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -65,7 +68,15 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="User Directory and Account Approvals"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200"
+    >
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden text-slate-900 dark:text-slate-100">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-950/50">
@@ -88,8 +99,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Close user management modal"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

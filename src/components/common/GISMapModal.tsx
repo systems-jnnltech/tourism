@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
 import { TourismDestination } from '../../types';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface GISMapModalProps {
   isOpen: boolean;
@@ -403,10 +404,20 @@ export const GISMapModal: React.FC<GISMapModalProps> = ({ isOpen, onClose, selec
     if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
   };
 
+  useEscapeKey(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Municipal GIS Tourism Mapping Engine"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+    >
       <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full h-[92vh] flex flex-col overflow-hidden border border-slate-200">
         {/* Modal Top Header */}
         <div className="bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between border-b border-slate-800">
@@ -428,9 +439,11 @@ export const GISMapModal: React.FC<GISMapModalProps> = ({ isOpen, onClose, selec
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white rounded-lg p-1.5 transition-colors hover:bg-slate-800"
-            title="Close GIS Map"
+            aria-label="Close GIS Map modal"
+            className="text-slate-400 hover:text-white rounded-lg p-1.5 transition-colors hover:bg-slate-800 cursor-pointer"
+            title="Close GIS Map (Esc)"
           >
             <X className="w-5 h-5" />
           </button>

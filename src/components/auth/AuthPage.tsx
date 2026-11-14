@@ -151,7 +151,7 @@ export const AuthPage: React.FC = () => {
   const isStaffRole = (role: UserRole) => role !== 'Guest/User';
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#080b10] text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#080b10] text-slate-100 font-sans">
       {/* ========================================================================= */}
       {/* LEFT COLUMN: System Overview & Statutory Pillars (Dark Theme)             */}
       {/* ========================================================================= */}
@@ -160,21 +160,30 @@ export const AuthPage: React.FC = () => {
         <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-gradient-to-bl from-amber-500/10 via-emerald-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[450px] h-[450px] bg-emerald-950/20 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top Header: Official Municipality Seal & Branding */}
+        {/* Top Header: Official Dual Seals & Municipality Branding */}
         <div className="relative z-10">
           <div className="flex items-center gap-3.5">
-            <img
-              src="/logo/LGU_LOGO1.png"
-              alt="Municipality of Malungon Seal"
-              className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-md rounded-full bg-white/5 p-1 border border-white/10"
-              onError={(e) => {
-                // Fallback to TourismLogo if LGU_LOGO1 fails
-                (e.target as HTMLImageElement).src = '/logo/TourismLogo.png';
-              }}
-            />
+            <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1.5 rounded-2xl border border-white/10 shadow-xs shrink-0">
+              <img
+                src="/logo/LGU_LOGO1.png"
+                alt="Municipality of Malungon Seal"
+                className="w-11 h-11 sm:w-12 sm:h-12 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+              <img
+                src="/logo/TourismLogo.png"
+                alt="Municipal Tourism Office Logo"
+                className="w-11 h-11 sm:w-12 sm:h-12 object-contain drop-shadow-md rounded-full bg-white/10 p-0.5 shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-white tracking-normal leading-tight">
-                Municipality Of Malungon
+                Municipality of Malungon
               </h2>
               <p className="text-[11px] sm:text-xs font-semibold tracking-widest text-slate-400 uppercase">
                 SARANGANI PROVINCE
@@ -271,33 +280,63 @@ export const AuthPage: React.FC = () => {
       {/* ========================================================================= */}
       {/* RIGHT COLUMN: Office Portal Authentication (Clean White Background)       */}
       {/* ========================================================================= */}
-      <div className="lg:w-[40%] xl:w-[37%] bg-white text-slate-900 p-6 sm:p-10 lg:p-12 xl:p-14 flex flex-col justify-center min-h-screen">
+      <div className="lg:w-[40%] xl:w-[37%] force-light bg-white text-slate-900 p-6 sm:p-10 lg:p-12 xl:p-14 flex flex-col justify-center min-h-screen">
         <div className="w-full max-w-md mx-auto space-y-6">
-          {/* Header */}
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
-              Office Portal
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              {mode === 'login' ? 'Sign in to access your dashboard' : 'Register for official municipal access'}
-            </p>
-          </div>
+          {/* Header & Segmented Mode Switcher */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+                Office Portal
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                {mode === 'login' ? 'Sign in to access your dashboard' : 'Register for official municipal access'}
+              </p>
+            </div>
 
-          {/* Mode Navigation Tabs if creating account */}
-          {mode === 'register' && (
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login');
-                setRegError(null);
-                setRegSuccessMessage(null);
-              }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors cursor-pointer"
+            <div
+              role="tablist"
+              aria-label="Portal authentication mode"
+              className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-slate-200/80 text-xs font-semibold"
             >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Back to Sign In</span>
-            </button>
-          )}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'login'}
+                onClick={() => {
+                  setMode('login');
+                  setRegError(null);
+                  setRegSuccessMessage(null);
+                }}
+                className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'login'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Sign In</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'register'}
+                onClick={() => {
+                  setMode('register');
+                  setLoginError(null);
+                  setRegError(null);
+                  setRegSuccessMessage(null);
+                }}
+                className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'register'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Request Account</span>
+              </button>
+            </div>
+          </div>
 
           {/* ===================================================================== */}
           {/* TAB 1: SIGN IN VIEW                                                   */}
@@ -349,6 +388,7 @@ export const AuthPage: React.FC = () => {
               {/* Error Notice */}
               {loginError && (
                 <div
+                  role="alert"
                   className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in duration-200 ${
                     isPendingApproval
                       ? 'bg-amber-50 border-amber-200 text-amber-900'
@@ -368,13 +408,15 @@ export const AuthPage: React.FC = () => {
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 {/* Identifier */}
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label htmlFor="auth-login-identifier" className="block text-xs font-semibold text-slate-700">
                     Official Email or Username
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                     <input
+                      id="auth-login-identifier"
                       type="text"
+                      autoComplete="username"
                       required
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
@@ -386,13 +428,15 @@ export const AuthPage: React.FC = () => {
 
                 {/* Password */}
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label htmlFor="auth-login-password" className="block text-xs font-semibold text-slate-700">
                     Password
                   </label>
                   <div className="relative">
-                    <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                     <input
+                      id="auth-login-password"
                       type={showLoginPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       required
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
@@ -402,8 +446,8 @@ export const AuthPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-                      tabIndex={-1}
+                      aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
                     >
                       {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -475,13 +519,13 @@ export const AuthPage: React.FC = () => {
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               {/* Success / Error Banners */}
               {regError && (
-                <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-xs text-rose-800 flex items-start gap-2 animate-in fade-in duration-200">
+                <div role="alert" className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-xs text-rose-800 flex items-start gap-2 animate-in fade-in duration-200">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>{regError}</span>
                 </div>
               )}
               {regSuccessMessage && (
-                <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-800 flex items-start gap-2 animate-in fade-in duration-200">
+                <div role="status" className="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-800 flex items-start gap-2 animate-in fade-in duration-200">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span>{regSuccessMessage}</span>
                 </div>
@@ -489,11 +533,13 @@ export const AuthPage: React.FC = () => {
 
               {/* Full Name */}
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">Full Name</label>
+                <label htmlFor="auth-reg-name" className="block text-xs font-semibold text-slate-700">Full Name</label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 pointer-events-none" />
                   <input
+                    id="auth-reg-name"
                     type="text"
+                    autoComplete="name"
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
@@ -505,11 +551,13 @@ export const AuthPage: React.FC = () => {
 
               {/* Email Address */}
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">Official Email</label>
+                <label htmlFor="auth-reg-email" className="block text-xs font-semibold text-slate-700">Official Email</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 pointer-events-none" />
                   <input
+                    id="auth-reg-email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
@@ -521,11 +569,13 @@ export const AuthPage: React.FC = () => {
 
               {/* Department / Organization */}
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">Department / Organization</label>
+                <label htmlFor="auth-reg-dept" className="block text-xs font-semibold text-slate-700">Department / Organization</label>
                 <div className="relative">
-                  <Building className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+                  <Building className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 pointer-events-none" />
                   <input
+                    id="auth-reg-dept"
                     type="text"
+                    autoComplete="organization"
                     value={regDepartment}
                     onChange={(e) => setRegDepartment(e.target.value)}
                     placeholder="e.g. MTO Operations / Local Resort / Tourism Client"
@@ -536,10 +586,11 @@ export const AuthPage: React.FC = () => {
 
               {/* Requested Role Dropdown */}
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label htmlFor="auth-reg-role" className="block text-xs font-semibold text-slate-700">
                   Account Type / Role Requested
                 </label>
                 <select
+                  id="auth-reg-role"
                   value={regRole}
                   onChange={(e) => setRegRole(e.target.value as UserRole)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
@@ -574,9 +625,11 @@ export const AuthPage: React.FC = () => {
               {/* Password & Confirm */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">Password</label>
+                  <label htmlFor="auth-reg-password" className="block text-xs font-semibold text-slate-700">Password</label>
                   <input
+                    id="auth-reg-password"
                     type={showRegPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     required
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
@@ -585,9 +638,11 @@ export const AuthPage: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">Confirm Password</label>
+                  <label htmlFor="auth-reg-confirm-password" className="block text-xs font-semibold text-slate-700">Confirm Password</label>
                   <input
+                    id="auth-reg-confirm-password"
                     type={showRegPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     required
                     value={regConfirmPassword}
                     onChange={(e) => setRegConfirmPassword(e.target.value)}

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Database, Download, Upload, RefreshCw, X, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface BackupRestoreModalProps {
   isOpen: boolean;
@@ -11,6 +12,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
   const { exportBackupJson, importBackupJson, resetToDefaultData, municipalityInfo } = useTourism();
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -73,7 +76,15 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Database Backup and Recovery Center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+    >
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
         {/* Header */}
         <div className="bg-emerald-900 text-white px-6 py-4 flex items-center justify-between">
@@ -87,8 +98,10 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-emerald-200 hover:text-white rounded-lg p-1 transition-colors hover:bg-emerald-800"
+            aria-label="Close backup modal"
+            className="text-emerald-200 hover:text-white rounded-lg p-1 transition-colors hover:bg-emerald-800 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

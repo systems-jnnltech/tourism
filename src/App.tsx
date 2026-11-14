@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TourismProvider, useTourism } from './context/TourismContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
@@ -43,6 +43,14 @@ const MainLayout: React.FC = () => {
   const [userMgmtModalOpen, setUserMgmtModalOpen] = useState(false);
   const [selectedGisDestId, setSelectedGisDestId] = useState<string | undefined>(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll workspace cleanly to top whenever the user switches modules
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [currentModule]);
 
   // Persistent sidebar collapse state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -183,7 +191,10 @@ const MainLayout: React.FC = () => {
         />
 
         {/* Dynamic Center Work Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50/70 dark:bg-slate-950/90 pb-16 print:overflow-visible print:h-auto print:p-0 print:m-0 print:bg-white transition-colors duration-200">
+        <main
+          ref={mainContentRef}
+          className="flex-1 min-w-0 overflow-y-auto bg-slate-50/70 dark:bg-slate-950/90 pb-16 print:overflow-visible print:h-auto print:p-0 print:m-0 print:bg-white transition-colors duration-200"
+        >
           {renderModule()}
         </main>
       </div>

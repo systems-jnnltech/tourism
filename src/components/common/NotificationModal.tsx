@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Send, Mail, MessageSquare, X, CheckCircle, BellRing, Users } from 'lucide-react';
 import { useTourism } from '../../context/TourismContext';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState(false);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -38,7 +41,15 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="LGU SMS and Email Broadcast System"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+    >
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-800 to-teal-800 text-white px-6 py-4 flex items-center justify-between">
@@ -52,8 +63,10 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-emerald-200 hover:text-white rounded-lg p-1 transition-colors hover:bg-white/10"
+            aria-label="Close broadcast modal"
+            className="text-emerald-200 hover:text-white rounded-lg p-1 transition-colors hover:bg-white/10 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

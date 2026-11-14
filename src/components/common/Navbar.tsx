@@ -92,18 +92,60 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [currentTime, setCurrentTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [activeResultIdx, setActiveResultIdx] = useState<number>(-1);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const desktopSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close search popover on outside click
+  // Close search popover & profile menu on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
         setIsSearchOpen(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(target)) {
+        setRoleDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Global keyboard shortcuts: Ctrl/Cmd+K for quick search, Escape to dismiss open popovers
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setRoleDropdownOpen(false);
+        if (window.innerWidth >= 1024) {
+          desktopSearchInputRef.current?.focus();
+          desktopSearchInputRef.current?.select();
+          setIsSearchOpen(true);
+        } else {
+          setIsMobileSearchOpen(true);
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+        setIsMobileSearchOpen(false);
+        setRoleDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, []);
+
+  useEffect(() => {
+    if (isMobileSearchOpen) {
+      setTimeout(() => mobileSearchInputRef.current?.focus(), 40);
+    }
+  }, [isMobileSearchOpen]);
 
   // Multi-entity search calculation
   const searchResults = useMemo(() => {
@@ -178,10 +220,240 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, [searchTerm, destinations, establishments, msmes, events, tourists]);
 
+  type SearchNavItem = {
+    id: string;
+    group: 'modules' | 'destinations' | 'establishments' | 'msmes' | 'events' | 'tourists';
+    title: string;
+    subtitle: string;
+    badge?: string;
+    targetModule: ModuleKey;
+  };
+
+  const searchGroupsMeta = useMemo(() => {
+    if (!searchResults) return [];
+    const groups: {
+      id: SearchNavItem['group'];
+      heading: string;
+      headingColor: string;
+      hoverText: string;
+      badgeColor: string;
+      icon: React.ComponentType<{ className?: string }>;
+      items: SearchNavItem[];
+    }[] = [
+      {
+        id: 'modules',
+        heading: 'System Modules',
+        headingColor: 'text-emerald-400',
+        hoverText: 'group-hover:text-emerald-300',
+        badgeColor: 'text-emerald-300',
+        icon: Compass,
+        items: searchResults.modules.map((m) => ({
+          id: `mod-${m.key}`,
+          group: 'modules',
+          title: m.label,
+          subtitle: m.description,
+          targetModule: m.key,
+        })),
+      },
+      {
+        id: 'destinations',
+        heading: 'Destinations & Attractions',
+        headingColor: 'text-teal-400',
+        hoverText: 'group-hover:text-teal-300',
+        badgeColor: 'text-teal-300',
+        icon: MapPin,
+        items: searchResults.destinations.map((d) => ({
+          id: `dest-${d.id}`,
+          group: 'destinations',
+          title: d.siteName,
+          subtitle: `${d.barangay} • ${d.classification}`,
+          badge: 'DAIMS',
+          targetModule: 'destinations',
+        })),
+      },
+      {
+        id: 'establishments',
+        heading: 'Establishments & Resorts',
+        headingColor: 'text-blue-400',
+        hoverText: 'group-hover:text-blue-300',
+        badgeColor: 'text-blue-300',
+        icon: Building2,
+        items: searchResults.establishments.map((est) => ({
+          id: `est-${est.id}`,
+          group: 'establishments',
+          title: est.name,
+          subtitle: `${est.category} • ${est.barangay}`,
+          badge: 'TED',
+          targetModule: 'establishments',
+        })),
+      },
+      {
+        id: 'msmes',
+        heading: 'MSME Enterprises',
+        headingColor: 'text-amber-400',
+        hoverText: 'group-hover:text-amber-300',
+        badgeColor: 'text-amber-300',
+        icon: Store,
+        items: searchResults.msmes.map((msme) => ({
+          id: `msme-${msme.id}`,
+          group: 'msmes',
+          title: msme.name,
+          subtitle: `${msme.productCategory} • ${msme.localProducts}`,
+          badge: 'MSME',
+          targetModule: 'msmes',
+        })),
+      },
+      {
+        id: 'events',
+        heading: 'Events & Festivals',
+        headingColor: 'text-purple-400',
+        hoverText: 'group-hover:text-purple-300',
+        badgeColor: 'text-purple-300',
+        icon: Calendar,
+        items: searchResults.events.map((ev) => ({
+          id: `ev-${ev.id}`,
+          group: 'events',
+          title: ev.eventName,
+          subtitle: `${ev.date} • ${ev.venue}`,
+          badge: 'EMS',
+          targetModule: 'events',
+        })),
+      },
+      {
+        id: 'tourists',
+        heading: 'Inbound Tourists',
+        headingColor: 'text-rose-400',
+        hoverText: 'group-hover:text-rose-300',
+        badgeColor: 'text-rose-300',
+        icon: Users,
+        items: searchResults.tourists.map((t) => ({
+          id: `t-${t.id}`,
+          group: 'tourists',
+          title: t.name,
+          subtitle: `ID: ${t.touristId} • Visited: ${t.destinationVisited}`,
+          badge: 'TAMS',
+          targetModule: 'tourists',
+        })),
+      },
+    ];
+    return groups.filter((g) => g.items.length > 0);
+  }, [searchResults]);
+
+  const flatSearchItems = useMemo(
+    () => searchGroupsMeta.flatMap((g) => g.items),
+    [searchGroupsMeta]
+  );
+
+  useEffect(() => {
+    setActiveResultIdx(flatSearchItems.length > 0 ? 0 : -1);
+  }, [flatSearchItems.length, searchTerm]);
+
   const handleSelectResult = (moduleKey: ModuleKey) => {
     setActiveModule(moduleKey);
     setIsSearchOpen(false);
+    setIsMobileSearchOpen(false);
     setSearchTerm('');
+    setActiveResultIdx(-1);
+  };
+
+  const handleSearchInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setIsSearchOpen(false);
+      setIsMobileSearchOpen(false);
+      return;
+    }
+    if (!flatSearchItems.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIsSearchOpen(true);
+      setActiveResultIdx((prev) => (prev + 1) % flatSearchItems.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setIsSearchOpen(true);
+      setActiveResultIdx((prev) => (prev <= 0 ? flatSearchItems.length - 1 : prev - 1));
+    } else if (e.key === 'Enter' && activeResultIdx >= 0 && flatSearchItems[activeResultIdx]) {
+      e.preventDefault();
+      handleSelectResult(flatSearchItems[activeResultIdx].targetModule);
+    }
+  };
+
+  const renderSearchPopoverBody = () => {
+    if (!searchResults) {
+      return (
+        <div className="p-5 text-center text-slate-400 text-xs">
+          <p className="font-semibold text-slate-200">Quick Command Search</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Type to jump across all 15 modules, destinations, resorts, MSMEs, events, and tourist records.
+          </p>
+        </div>
+      );
+    }
+
+    if (searchResults.totalMatches === 0) {
+      return (
+        <div className="p-6 text-center text-slate-400 text-xs">
+          <Search className="w-6 h-6 text-slate-500 mx-auto mb-2 opacity-50" />
+          <p className="font-semibold text-slate-300">No matching records found</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            No results matching &ldquo;{searchTerm}&rdquo; across destinations, MSMEs, resorts, or logs.
+          </p>
+        </div>
+      );
+    }
+
+    let runningIdx = 0;
+
+    return (
+      <>
+        <div className="divide-y divide-slate-800/70 p-2 space-y-2">
+          {searchGroupsMeta.map((group) => {
+            const Icon = group.icon;
+            return (
+              <div key={group.id} className="space-y-1 pt-1 first:pt-0">
+                <div className={`text-[10px] font-bold ${group.headingColor} uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5`}>
+                  <Icon className="w-3 h-3" />
+                  <span>{group.heading} ({group.items.length})</span>
+                </div>
+                {group.items.map((item) => {
+                  const itemIdx = runningIdx++;
+                  const isHighlighted = itemIdx === activeResultIdx;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onMouseEnter={() => setActiveResultIdx(itemIdx)}
+                      onClick={() => handleSelectResult(item.targetModule)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer ${
+                        isHighlighted ? 'bg-slate-800 ring-1 ring-emerald-500/40' : 'hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className={`font-semibold text-white truncate transition-colors ${group.hoverText}`}>
+                          {item.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">{item.subtitle}</div>
+                      </div>
+                      {item.badge ? (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded bg-slate-800 ${group.badgeColor} font-mono border border-slate-700 shrink-0`}>
+                          {item.badge}
+                        </span>
+                      ) : (
+                        <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isHighlighted ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400'}`} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+        <div className="px-3 py-1.5 bg-slate-950/80 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+          <span>{searchResults.totalMatches} quick match{searchResults.totalMatches === 1 ? '' : 'es'}</span>
+          <span className="hidden sm:inline font-mono">↑↓ Navigate • ↵ Open • Esc Close</span>
+        </div>
+      </>
+    );
   };
 
   // Philippine Standard Time real-time clock
@@ -202,22 +474,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    onGlobalSearch?.(e.target.value);
-  };
-
   return (
+    <>
     <header className="bg-slate-900 border-b border-emerald-800/40 text-white sticky top-0 z-40 shadow-md print:hidden">
       {/* Top LGU Banner strip */}
       <div className="bg-emerald-800 px-4 py-1 text-[11px] text-emerald-100 flex items-center justify-between font-medium">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Republic of the Philippines • Province of Sarangani • {municipalityInfo.name}</span>
-          <span className="hidden md:inline text-emerald-300">• {municipalityInfo.officeName}</span>
+        <div className="flex items-center space-x-2 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <span className="truncate">Republic of the Philippines • Province of Sarangani • {municipalityInfo.name}</span>
+          <span className="hidden md:inline text-emerald-300 truncate">• {municipalityInfo.officeName}</span>
         </div>
-        <div className="flex items-center space-x-3 text-[11px]">
-          <span className="font-mono text-emerald-200">PST: {currentTime}</span>
+        <div className="flex items-center space-x-3 text-[11px] shrink-0">
+          <span className="font-mono tabular-nums text-emerald-200">PST: {currentTime}</span>
           <span className="hidden sm:inline bg-emerald-900/60 px-2 py-0.5 rounded text-[10px] text-emerald-200 border border-emerald-700/60">
             DOT & DILG Mandated LGU System
           </span>
@@ -236,6 +504,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={onToggleMobileMenu}
               className="md:hidden p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               aria-label="Toggle navigation sidebar"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -275,12 +544,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Middle: Interactive Search & Weather */}
-        <div className="hidden lg:flex items-center space-x-3 flex-1 max-w-md mx-2">
+        <div className="hidden lg:flex items-center space-x-3 flex-1 max-w-lg mx-2">
           <div ref={searchContainerRef} className="relative w-full">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
             <input
+              ref={desktopSearchInputRef}
               type="text"
-              placeholder="Search tourists, resorts, MSMEs, destinations, modules..."
+              placeholder="Search portal..."
+              aria-label="Search modules, destinations, establishments, MSMEs, events, and tourists"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -290,12 +561,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               onFocus={() => {
                 if (searchTerm.trim()) setIsSearchOpen(true);
               }}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') setIsSearchOpen(false);
-              }}
-              className="w-full pl-8 pr-8 py-1.5 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+              onKeyDown={handleSearchInputKeyDown}
+              className="w-full pl-8 pr-8 xl:pr-14 py-1.5 bg-slate-800/90 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
             />
-            {searchTerm && (
+            {searchTerm ? (
               <button
                 type="button"
                 onClick={() => {
@@ -304,201 +573,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className="absolute right-2.5 top-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
                 title="Clear search"
+                aria-label="Clear search query"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            ) : (
+              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900/80 border border-slate-700 rounded absolute right-2 top-1.5 pointer-events-none">
+                Ctrl K
+              </kbd>
             )}
 
             {/* Live Interactive Search Results Popover */}
             {isSearchOpen && searchResults && (
               <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
-                {searchResults.totalMatches === 0 ? (
-                  <div className="p-6 text-center text-slate-400 text-xs">
-                    <Search className="w-6 h-6 text-slate-500 mx-auto mb-2 opacity-50" />
-                    <p className="font-semibold text-slate-300">No matching records found</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      No results matching &ldquo;{searchTerm}&rdquo; across destinations, MSMEs, resorts, or logs.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-800/70 p-2 space-y-2">
-                    {/* Modules Matches */}
-                    {searchResults.modules.length > 0 && (
-                      <div className="space-y-1">
-                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
-                          <Compass className="w-3 h-3" />
-                          <span>System Modules ({searchResults.modules.length})</span>
-                        </div>
-                        {searchResults.modules.map((mod) => (
-                          <button
-                            key={mod.key}
-                            type="button"
-                            onClick={() => handleSelectResult(mod.key)}
-                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-semibold text-white group-hover:text-emerald-300 transition-colors">
-                                {mod.label}
-                              </div>
-                              <div className="text-[10px] text-slate-400">{mod.description}</div>
-                            </div>
-                            <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Destinations Matches */}
-                    {searchResults.destinations.length > 0 && (
-                      <div className="space-y-1 pt-1.5">
-                        <div className="text-[10px] font-bold text-teal-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3" />
-                          <span>Destinations & Attractions ({searchResults.destinations.length})</span>
-                        </div>
-                        {searchResults.destinations.map((dest) => (
-                          <button
-                            key={dest.id}
-                            type="button"
-                            onClick={() => handleSelectResult('destinations')}
-                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-semibold text-white group-hover:text-teal-300 transition-colors">
-                                {dest.siteName}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                {dest.barangay} • {dest.classification}
-                              </div>
-                            </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-teal-300 font-mono border border-slate-700">
-                              DAIMS
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Establishments Matches */}
-                    {searchResults.establishments.length > 0 && (
-                      <div className="space-y-1 pt-1.5">
-                        <div className="text-[10px] font-bold text-blue-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
-                          <Building2 className="w-3 h-3" />
-                          <span>Establishments & Resorts ({searchResults.establishments.length})</span>
-                        </div>
-                        {searchResults.establishments.map((est) => (
-                          <button
-                            key={est.id}
-                            type="button"
-                            onClick={() => handleSelectResult('establishments')}
-                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-semibold text-white group-hover:text-blue-300 transition-colors">
-                                {est.name}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                {est.category} • {est.barangay}
-                              </div>
-                            </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-blue-300 font-mono border border-slate-700">
-                              TED
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* MSMEs Matches */}
-                    {searchResults.msmes.length > 0 && (
-                      <div className="space-y-1 pt-1.5">
-                        <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
-                          <Store className="w-3 h-3" />
-                          <span>MSME Enterprises ({searchResults.msmes.length})</span>
-                        </div>
-                        {searchResults.msmes.map((msme) => (
-                          <button
-                            key={msme.id}
-                            type="button"
-                            onClick={() => handleSelectResult('msmes')}
-                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-semibold text-white group-hover:text-amber-300 transition-colors">
-                                {msme.name}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                {msme.productCategory} • {msme.localProducts}
-                              </div>
-                            </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono border border-slate-700">
-                              MSME
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Events Matches */}
-                    {searchResults.events.length > 0 && (
-                      <div className="space-y-1 pt-1.5">
-                        <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
-                          <Calendar className="w-3 h-3" />
-                          <span>Events & Festivals ({searchResults.events.length})</span>
-                        </div>
-                        {searchResults.events.map((ev) => (
-                          <button
-                            key={ev.id}
-                            type="button"
-                            onClick={() => handleSelectResult('events')}
-                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-semibold text-white group-hover:text-purple-300 transition-colors">
-                                {ev.eventName}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                {ev.date} • {ev.venue}
-                              </div>
-                            </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-purple-300 font-mono border border-slate-700">
-                              EMS
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Tourists Matches */}
-                    {searchResults.tourists.length > 0 && (
-                      <div className="space-y-1 pt-1.5">
-                        <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider px-2 py-0.5 flex items-center gap-1.5">
-                          <Users className="w-3 h-3" />
-                          <span>Inbound Tourists ({searchResults.tourists.length})</span>
-                        </div>
-                        {searchResults.tourists.map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => handleSelectResult('tourists')}
-                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-semibold text-white group-hover:text-rose-300 transition-colors">
-                                {t.name}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                ID: {t.touristId} • Visited: {t.destinationVisited}
-                              </div>
-                            </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-rose-300 font-mono border border-slate-700">
-                              TAMS
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {renderSearchPopoverBody()}
               </div>
             )}
           </div>
@@ -518,7 +606,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <CloudSun className="w-4 h-4 text-amber-400 shrink-0" />
             )}
             <div className="leading-tight">
-              <div className="text-[11px] font-bold text-slate-200 flex items-center gap-1">
+              <div className="text-[11px] font-bold text-slate-200 flex items-center gap-1 tabular-nums">
                 <span>{weather.temperature}°C</span>
                 <span className="text-[9px] text-slate-400 font-normal hidden sm:inline">• Malungon</span>
                 {weather.isLive && (
@@ -534,10 +622,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right: Quick Tools & Role Switcher */}
         <div className="flex items-center space-x-2 shrink-0">
+          {/* Responsive Global Search Button for < lg viewports */}
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="lg:hidden p-1.5 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Search portal (Ctrl+K)"
+            aria-label="Open global search"
+          >
+            <Search className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Search</span>
+          </button>
+
           {/* GIS Map Trigger */}
           <button
+            type="button"
             onClick={onOpenGIS}
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
             title="Open Municipal GIS Map"
           >
             <Compass className="w-3.5 h-3.5 text-emerald-400" />
@@ -547,14 +648,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* SMS & Email Broadcast (Strict RBAC: Authorized Roles only) */}
           {canBroadcast && (
             <button
+              type="button"
               onClick={onOpenNotify}
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors relative"
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors relative cursor-pointer"
               title="LGU Broadcast Dispatcher"
             >
               <BellRing className="w-3.5 h-3.5 text-blue-400" />
               <span className="hidden md:inline">Alerts</span>
               {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center tabular-nums">
                   {notifications.length}
                 </span>
               )}
@@ -576,7 +678,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             {theme === 'dark' ? (
               <>
-                <Sun className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden lg:inline text-[11px] font-medium text-amber-200">Light</span>
               </>
             ) : (
@@ -588,8 +690,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* User Profile & Session Dropdown */}
-          <div className="relative">
+          <div ref={profileDropdownRef} className="relative">
             <button
+              type="button"
+              aria-expanded={roleDropdownOpen}
+              aria-haspopup="menu"
               onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
               className="flex items-center space-x-2 pl-2 pr-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/70 rounded-lg text-left transition-colors relative cursor-pointer"
             >
@@ -602,11 +707,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="text-[11px] font-bold text-white truncate max-w-[130px]">{currentUser?.name || 'User'}</div>
                 <div className="text-[9px] text-emerald-300 truncate max-w-[130px]">{currentUser?.role || 'Guest'}</div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-emerald-300 shrink-0 transition-transform duration-150 ${
+                  roleDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
 
               {/* Pending Approvals Badge for Admins */}
               {canManageUsers && pendingUsersCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white rounded-full text-[9px] font-black flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white rounded-full text-[9px] font-black flex items-center justify-center animate-pulse tabular-nums">
                   {pendingUsersCount}
                 </span>
               )}
@@ -614,7 +723,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Profile & Session Popover */}
             {roleDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+              <div
+                role="menu"
+                aria-label="User session menu"
+                className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+              >
                 <div className="p-3.5 bg-emerald-900 text-white">
                   <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-bold flex items-center justify-between">
                     <span>Authenticated User Session</span>
@@ -721,5 +834,56 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       )}
     </header>
+
+    {/* Mobile / Tablet Responsive Command Search Overlay (< lg) */}
+    {isMobileSearchOpen && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Global portal search"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setIsMobileSearchOpen(false);
+        }}
+        className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs p-4 pt-16 sm:pt-20 flex items-start justify-center lg:hidden print:hidden animate-in fade-in duration-150"
+      >
+        <div className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden text-white">
+          <div className="p-3 border-b border-slate-800 flex items-center gap-2">
+            <Search className="w-4 h-4 text-emerald-400 shrink-0" />
+            <input
+              ref={mobileSearchInputRef}
+              type="text"
+              placeholder="Search modules, sites, resorts, tourists..."
+              aria-label="Search modules and records"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                onGlobalSearch?.(e.target.value);
+              }}
+              onKeyDown={handleSearchInputKeyDown}
+              className="w-full bg-transparent text-sm text-white placeholder-slate-400 focus:outline-none"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="p-1 text-slate-400 hover:text-white rounded-md cursor-pointer"
+                aria-label="Clear search query"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(false)}
+              className="px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md border border-slate-700 cursor-pointer"
+            >
+              Esc
+            </button>
+          </div>
+          <div className="max-h-[65vh] overflow-y-auto">{renderSearchPopoverBody()}</div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
